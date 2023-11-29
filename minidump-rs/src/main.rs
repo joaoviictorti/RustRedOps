@@ -25,7 +25,7 @@ fn find_lsass() -> Result<u32, String> {
         return Ok(process.pid().as_u32());
     }
 
-    return Err(String::from("[!] Error finding lsass PID!"));
+    return Err(String::from("Error finding lsass PID!"));
 }
 
 fn main() {
