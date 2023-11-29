@@ -19,7 +19,7 @@ The repository is organized into several projects, each with its own purpose and
    - This project exploits the Asynchronous Code Injection (APC) technique to execute malicious code in target processes.
    
 2. [**Early Bird APC Injection**](/Early_Bird_APC_Injection)
-   - It focuses on a variation of APC injection, executing code before the main process starts, to avoid detection.
+   - It focuses on a variation of APC injection, executing code before the main process starts.
 
 3. [**Local Payload Execution**](/Local_Payload_Execution)
    - This project addresses the direct execution of malicious payloads in a system's local environment.
