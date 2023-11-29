@@ -48,11 +48,13 @@ The repository is organized into several projects, each with its own purpose and
 11. [**Local Mapping Injection**](/Local_Mapping_Injection)
     - This project explores the injection of malicious code through memory mapping in local processes.
 
+12. [**minidump-rs**](/minidump-rs)
+    - Dumping the lsass.exe process.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
 - You can view the installation instructions, usage and examples for each project in their respective directories.
-
 
 ## Requirements
 
