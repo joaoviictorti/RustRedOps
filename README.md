@@ -54,6 +54,9 @@ The repository is organized into several projects, each with its own purpose and
 14. [**minidump-rs**](/minidump-rs)
     - Dumping the lsass.exe process.
 
+15. [**Registry Shellcode**](/Registry_shellcode)
+    - Writing and reading shellcode to the Windows Registry
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
