@@ -46,9 +46,12 @@ The repository is organized into several projects, each with its own purpose and
     - It exploits the substitution of functions in remote systems to carry out malicious activities.
 
 11. [**Local Mapping Injection**](/Local_Mapping_Injection)
-    - This project explores the injection of malicious code through memory mapping in local processes.
+    - Performing malicious code injection via memory mapping into local processes.
 
-12. [**minidump-rs**](/minidump-rs)
+13. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
+    - Performing malicious code injection via memory mapping into remote processes.
+
+14. [**minidump-rs**](/minidump-rs)
     - Dumping the lsass.exe process.
 
 ## Resources
