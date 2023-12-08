@@ -30,6 +30,7 @@ extern "system" fn my_message_box_a(
     unsafe { MessageBoxW(hwnd, w!("HOOK"), w!("ENABLED!"), u_type) }
 }
 
+#[derive(Debug)]
 struct Hook {
     #[cfg(target_arch = "x86_64")]
     bytes_original: [u8; 13],
@@ -51,7 +52,7 @@ impl Hook {
         }
     }
 
-    fn initialize(&mut self, trampoline: &[u8]) -> bool {
+    fn initialize(&mut self, trampoline: &[u8], old_protect: &mut PAGE_PROTECTION_FLAGS) -> bool {
         unsafe {
             copy(
                 self.function_hook,
@@ -59,12 +60,11 @@ impl Hook {
                 trampoline.len(),
             );
 
-            let mut old_protect = PAGE_PROTECTION_FLAGS(0);
             let result = VirtualProtect(
                 self.function_hook,
                 trampoline.len(),
                 PAGE_EXECUTE_READWRITE,
-                &mut old_protect,
+                old_protect,
             );
             if result.is_err() {
                 println!("[!] VirtualProtect Failed With Error {:?}", result.err());
@@ -74,14 +74,15 @@ impl Hook {
         true
     }
 
-    fn install_hook(&self, trampoline: &[u8]) {
+    fn install_hook(&self, trampoline: &mut [u8]) {
+
         unsafe {
             copy(
-                &self.function_run as *const _ as *const c_void,
-                trampoline[2..].as_ptr() as *mut c_void,
+                &self.function_run as  *const _ as *const c_void,
+                trampoline[2..].as_mut_ptr() as *mut c_void,
                 size_of::<*mut c_void>(),
             );
-
+            println!("{:?}", trampoline);
             copy(
                 trampoline.as_ptr() as *const c_void,
                 self.function_hook,
@@ -109,14 +110,17 @@ fn main() {
 
     let mut hook = Hook::new(my_message_box_a as *mut c_void, func as *mut c_void);
 
-    if hook.initialize(&mut trampoline) {
-        hook.install_hook(&trampoline);
+    let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
+
+    if hook.initialize(&mut trampoline, &mut oldprotect) {
+        hook.install_hook(&mut trampoline);
     } else {
         println!("[!] Failed to Apply Hook!");
         return;
     }
 
     unsafe {
+
         MessageBoxA(HWND(0), s!("Test Message"), s!("Test"), MB_OK);
 
         println!("[+] Hook disabled");
@@ -125,6 +129,14 @@ fn main() {
             hook.function_hook as *mut u8,
             trampoline.len(),
         );
+
+        let mut d_old_protect = PAGE_PROTECTION_FLAGS(0);
+        let protection_address = VirtualProtect(hook.function_hook, trampoline.len(), oldprotect, &mut d_old_protect);
+
+        if protection_address.is_err() {
+            println!("[!] VirtualProtect Failed With Error {:?}", protection_address.err());
+            return ;
+        }
 
         MessageBoxA(HWND(0), s!("Test Message"), s!("Test"), MB_OK);
     }
