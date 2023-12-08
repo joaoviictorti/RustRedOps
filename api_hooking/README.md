@@ -15,16 +15,16 @@ API hooking in Windows, calls to these APIs are intercepted, allowing them to be
 # Running
 
 Performing the API Hooking technique in MessageBoxA:
-![](/img//hook_enabled.png)
+![Hook Enabled](img//hook_enabled.png)
 
 Checking the debugger for the change:
-![](/img//debugger_enabled.png)
+![Debugger Enabled](img/debugger_enabled.png)
 
 Eliminating the API hook:
-![](/img/hook_disabled.png)
+![Hook Disabled](img/hook_disabled.png)
 
 Checking the debugger when disabling the hook:
-![](/img/debugger_disabled.png)
+![Debugger Disabled](img/debugger_disabled.png)
 
 # Usage 
 
