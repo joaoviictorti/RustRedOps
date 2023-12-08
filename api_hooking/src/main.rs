@@ -80,7 +80,7 @@ impl Hook {
                 trampoline[2..].as_mut_ptr() as *mut c_void,
                 size_of::<*mut c_void>(),
             );
-            println!("{:?}", trampoline);
+
             copy(
                 trampoline.as_ptr() as *const c_void,
                 self.function_hook,
