@@ -51,11 +51,14 @@ The repository is organized into several projects, each with its own purpose and
 13. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
     - Performing malicious code injection via memory mapping into remote processes.
 
-14. [**minidump-rs**](/minidump-rs)
+13. [**minidump-rs**](/minidump-rs)
     - Dumping the lsass.exe process.
 
-15. [**Registry Shellcode**](/Registry_shellcode)
+14. [**Registry Shellcode**](/Registry_shellcode)
     - Writing and reading shellcode to the Windows Registry
+
+14. [**API Hooking**](/api_hooking)
+    - Demonstration on API hooking which is a programming technique that allows you to intercept and manipulate calls to Windows API functions.
 
 ## Resources
 
