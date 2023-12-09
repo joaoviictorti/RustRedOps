@@ -29,6 +29,7 @@ extern "system" fn my_message_box_a(
 
     unsafe { MessageBoxW(hwnd, w!("HOOK"), w!("ENABLED!"), u_type) }
 }
+
 struct Hook {
     #[cfg(target_arch = "x86_64")]
     bytes_original: [u8; 13],
