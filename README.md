@@ -55,7 +55,7 @@ The repository is organized into several projects, each with its own purpose and
     - Dumping the lsass.exe process.
 
 14. [**Registry Shellcode**](/Registry_shellcode)
-    - Writing and reading shellcode to the Windows Registry
+    - Writing and reading shellcode to the Windows Registry.
 
 14. [**API Hooking**](/api_hooking)
     - Demonstration on API hooking which is a programming technique that allows you to intercept and manipulate calls to Windows API functions.
