@@ -60,6 +60,9 @@ The repository is organized into several projects, each with its own purpose and
 14. [**API Hooking**](/api_hooking)
     - Demonstration on API hooking which is a programming technique that allows you to intercept and manipulate calls to Windows API functions.
 
+15. [**Encryption AES (Shellcode)**](/Encryption_AES_Shellcode)
+    - Encrypting / Decrypting a shellcode using AES
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
