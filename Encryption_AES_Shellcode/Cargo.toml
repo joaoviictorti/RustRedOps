@@ -1,0 +1,11 @@
+[package]
+name = "encryption_aes"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aes = "0.8.3"
+libaes = "0.7.0"
+windows = { version = "0.52.0", features = ["Win32_System_Memory", "Win32_System_Threading", "Win32_Security", "Win32_Foundation"] }
