@@ -66,6 +66,9 @@ The repository is organized into several projects, each with its own purpose and
 17. [**Encryption RC4 (Shellcode)**](/Encryption_RC4_Shellcode)
     - Encrypting / Decrypting a shellcode using RC4
 
+18. [**String Hashing**](/String_Hashing)
+    - Creating string hashes to perform hiding.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
