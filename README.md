@@ -61,10 +61,10 @@ The repository is organized into several projects, each with its own purpose and
     - Demonstration on API hooking which is a programming technique that allows you to intercept and manipulate calls to Windows API functions.
 
 16. [**Encryption AES (Shellcode)**](/Encryption_AES_Shellcode)
-    - Encrypting / Decrypting a shellcode using AES
+    - Encrypting / Decrypting a shellcode using AES.
 
 17. [**Encryption RC4 (Shellcode)**](/Encryption_RC4_Shellcode)
-    - Encrypting / Decrypting a shellcode using RC4
+    - Encrypting / Decrypting a shellcode using RC4.
 
 18. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
