@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use std::arch::asm;
 use sysinfo::System;
 use windows::Win32::System::Diagnostics::Debug::{
@@ -12,8 +10,6 @@ fn main() {
     is_debugger_peb();
     process_list();
     breakpoint_hardware();
-
-    std::thread::sleep(Duration::from_secs(1000000))
 }
 
 fn is_debugger_present() {
@@ -32,7 +28,7 @@ fn is_debugger_peb() {
     let peb = get_peb(0x30);
 
     unsafe {
-        if (*peb ).BeingDebugged == 1 {
+        if (*peb).BeingDebugged == 1 {
             println!("[!] Debugger Detected! [2]");
         }
     }
