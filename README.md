@@ -70,7 +70,7 @@ The repository is organized into several projects, each with its own purpose and
     - Creating string hashes to perform hiding.
 
 19. [**Anti-Debug**](/Anti-Debug)
-    - Techniques Anti-Debugging
+    - Techniques Anti-Debugging.
 
 ## Resources
 
