@@ -69,6 +69,9 @@ The repository is organized into several projects, each with its own purpose and
 18. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
+19. [**Anti-Debug**](/Anti-Debug)
+    - Techniques Anti-Debugging
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
