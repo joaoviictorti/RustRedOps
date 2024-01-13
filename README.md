@@ -33,7 +33,7 @@ The repository is organized into several projects, each with its own purpose and
 6. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
    - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
 
-7. [**Local Thread Hijacking**](/Local_Thread_HIjacking)
+7. [**Local Thread Hijacking**](/Local_Thread_Hijacking)
     - This project deals with hijacking the threads of processes running on the local system to execute malicious code.
 
 8. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
