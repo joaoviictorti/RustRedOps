@@ -54,7 +54,7 @@ The repository is organized into several projects, each with its own purpose and
 13. [**minidump-rs**](/minidump-rs)
     - Dumping the lsass.exe process.
 
-14. [**Registry Shellcode**](/Registry_shellcode)
+14. [**Registry Shellcode**](/Registry_Shellcode)
     - Writing and reading shellcode to the Windows Registry.
 
 15. [**API Hooking**](/API_Hooking)
@@ -71,6 +71,9 @@ The repository is organized into several projects, each with its own purpose and
 
 19. [**Anti-Debug**](/Anti-Debug)
     - Techniques Anti-Debugging.
+
+20. [**Local Payload Execution (Linux)**](/Anti-Debug)
+    - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
 
 ## Resources
 
