@@ -24,7 +24,7 @@ The repository is organized into several projects, each with its own purpose and
 3. [**Local Payload Execution**](/Local_Payload_Execution)
    - This project addresses the direct execution of malicious payloads in a system's local environment.
 
-4. [**Process Argument Spoofing**](/Process_Argument_spoofing)
+4. [**Process Argument Spoofing**](/Process_Argument_Spoofing)
    - Exploits the technique of masking or altering the arguments of a process to hide malicious activity.
    
 5. [**Process Injection (DLL)**](/Process_Injection_DLL)
@@ -69,7 +69,7 @@ The repository is organized into several projects, each with its own purpose and
 18. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-19. [**Anti-Debug**](/Anti-Debug)
+19. [**Anti-Debug**](/Anti_Debug)
     - Techniques Anti-Debugging.
 
 20. [**Local Payload Execution (Linux)**](/Local_Payload_Execution%20(Linux))
