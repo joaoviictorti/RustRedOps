@@ -30,7 +30,7 @@ The repository is organized into several projects, each with its own purpose and
 5. [**Process Injection (DLL)**](/Process_Injection_DLL)
    - It focuses on injecting dynamic link libraries (DLL) into running processes to execute malicious code.
 
-6. [**Process Injection (Shellcode)**](/Process_Injection_shellcode)
+6. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
    - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
 
 7. [**Local Thread Hijacking**](/Local_Thread_HIjacking)
