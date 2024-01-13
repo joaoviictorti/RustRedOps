@@ -51,7 +51,7 @@ The repository is organized into several projects, each with its own purpose and
 12. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
     - Performing malicious code injection via memory mapping into remote processes.
 
-13. [**minidump-rs**](/minidump-rs)
+13. [**minidump-rs**](/Minidump-rs)
     - Dumping the lsass.exe process.
 
 14. [**Registry Shellcode**](/Registry_Shellcode)
