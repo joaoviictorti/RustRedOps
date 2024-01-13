@@ -72,7 +72,7 @@ The repository is organized into several projects, each with its own purpose and
 19. [**Anti-Debug**](/Anti-Debug)
     - Techniques Anti-Debugging.
 
-20. [**Local Payload Execution (Linux)**](/Anti-Debug)
+20. [**Local Payload Execution (Linux)**](/Local_Payload_Execution%20(Linux))
     - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
 
 ## Resources
