@@ -32,8 +32,8 @@ fn main() {
             s!("LoadLibraryW"),
         );
 
-        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid).unwrap_or_else(|_e| {
-            println!("[!] OpenProcess Failed With Error: {pid}");
+        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid).unwrap_or_else(|e| {
+            println!("[!] OpenProcess Failed With Error: {e}");
             exit(-1);
         });
 
