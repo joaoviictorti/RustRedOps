@@ -75,6 +75,10 @@ The repository is organized into several projects, each with its own purpose and
 20. [**Local Payload Execution (Linux)**](/Local_Payload_Execution%20(Linux))
     - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
 
+21. [**Syscalls**](/syscalls)
+    - This project focuses on the injection attack in the local process, but using syscalls directly.
+
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
