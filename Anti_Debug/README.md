@@ -10,7 +10,7 @@
 
 # Overview
 
-Anti-debugging techniques focus on making it difficult or impossible for debuggers to analyze malware code. This repository shows some that can be used.
+Techniques Anti-debugging focus on making it difficult or impossible for debuggers to analyze malware code. This repository shows some that can be used.
 
 # Usage 
 
