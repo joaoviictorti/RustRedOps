@@ -2,7 +2,6 @@
 
 ![Rust Logo](rust.png)
 
-
 ## In Construction....
 
 The project is still under development
