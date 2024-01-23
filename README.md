@@ -78,6 +78,8 @@ The repository is organized into several projects, each with its own purpose and
 21. [**Syscalls**](/syscalls)
     - This project focuses on the injection attack in the local process, but using syscalls directly.
 
+22. [**Anti-Analysis**](/Anti_Analysis)
+    - Techniques Anti-Analysis.
 
 ## Resources
 
