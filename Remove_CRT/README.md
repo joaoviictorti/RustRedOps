@@ -1,4 +1,4 @@
-# Remote CRT 🦀
+# Remove CRT 🦀
 
 <p align="left">
 	<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/made%20with-Rust-red"></a>
