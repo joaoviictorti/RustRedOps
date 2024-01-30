@@ -80,6 +80,9 @@ The repository is organized into several projects, each with its own purpose and
 22. [**Anti-Analysis**](/Anti_Analysis)
     - Techniques Anti-Analysis.
 
+23. [**Remove CRT**](/Remove_CRT)
+    - It focuses on removing the CRT (C Runtime Library) from the binary 
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
