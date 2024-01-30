@@ -5,17 +5,17 @@
 
 ## Summary
 
-* [In Construction](#in+construction)
+* [In Construction](#in-construction)
 * [Overview](#overview)
 * [Contents](#contents)
 * [Resources](#resources)
 * [Requirements](#requirements)
 * [Compile](#compile)
-    * [Compiling the Project](#compiling+the+project)
-    * [Adding Destination Architectures](#adding+destination+architectures)
-    * [Compiling for a Specific Architecture](#compiling+for+a+specific+architecture)
-* [How to get started](#how+to+get+started)
-* [Contributing to RustRedOps](#contributing+to+rustRedOps)
+    * [Compiling the Project](#compiling-the-project)
+    * [Adding Destination Architectures](#adding-destination-architectures)
+    * [Compiling for a Specific Architecture](#compiling-for-a-specific-architecture)
+* [How to get started](#how-to-get-started)
+* [Contributing to RustRedOps](#contributing-to-rustRedOps)
 
 ## In Construction
 
