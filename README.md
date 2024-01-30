@@ -74,7 +74,7 @@ The repository is organized into several projects, each with its own purpose and
 20. [**Local Payload Execution (Linux)**](/Local_Payload_Execution%20(Linux))
     - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
 
-21. [**Syscalls**](/syscalls)
+21. [**Syscalls**](/Syscalls)
     - This project focuses on the injection attack in the local process, but using syscalls directly.
 
 22. [**Anti-Analysis**](/Anti_Analysis)
