@@ -2,7 +2,22 @@
 
 ![Rust Logo](rust.png)
 
-## In Construction....
+
+## Summary
+
+* [In Construction](#in+construction)
+* [Overview](#overview)
+* [Contents](#contents)
+* [Resources](#resources)
+* [Requirements](#requirements)
+* [Compile](#compile)
+    * [Compiling the Project](#compiling+the+project)
+    * [Adding Destination Architectures](#adding+destination+architectures)
+    * [Compiling for a Specific Architecture](#compiling+for+a+specific+architecture)
+* [How to get started](#how+to+get+started)
+* [Contributing to RustRedOps](#contributing+to+rustRedOps)
+
+## In Construction
 
 The project is still under development
 
