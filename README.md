@@ -81,7 +81,7 @@ The repository is organized into several projects, each with its own purpose and
     - Techniques Anti-Analysis.
 
 23. [**Remove CRT**](/Remove_CRT)
-    - It focuses on removing the CRT (C Runtime Library) from the binary 
+    - It focuses on removing the CRT (C Runtime Library) from the binary.
 
 ## Resources
 
