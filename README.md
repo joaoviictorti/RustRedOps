@@ -98,6 +98,12 @@ The repository is organized into several projects, each with its own purpose and
 23. [**Remove CRT**](/Remove_CRT)
     - It focuses on removing the CRT (C Runtime Library) from the binary.
 
+24. [**Request Shellcode**](/Request_Shellcode)
+    - Retrieving shellcode from HTTP requests using Rust.
+
+25. [**Enumeration Process**](/Enumeration_Processes)
+    - Enumerating processes with Rust.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
