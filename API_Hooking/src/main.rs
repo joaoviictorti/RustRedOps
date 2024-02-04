@@ -1,5 +1,4 @@
-use std::ffi::{c_char, CStr};
-use std::{mem::size_of, os::raw::c_void, ptr::copy};
+use std::{mem::size_of, os::raw::c_void, ptr::copy, ffi::{c_char, CStr}};
 use windows::{
     core::{s, w},
     Win32::{
@@ -24,8 +23,8 @@ extern "system" fn my_message_box_a(
     let caption = c_str_caption.to_string_lossy();
 
     println!("[+] Parameters sent by the original function:");
-    println!("\t - lp_text    : {}", text);
-    println!("\t - lp_caption : {}", caption);
+    println!("\t - text    : {}", text);
+    println!("\t - caption : {}", caption);
 
     unsafe { MessageBoxW(hwnd, w!("HOOK"), w!("ENABLED!"), u_type) }
 }
