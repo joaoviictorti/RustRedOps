@@ -1,10 +1,9 @@
 use std::ffi::c_void;
-
 use windows::{
     core::s,
     Win32::System::Registry::{
-        RegGetValueA, RegOpenKeyExA, RegSetValueExA,RegCloseKey, HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE,
-        REG_BINARY, REG_VALUE_TYPE, RRF_RT_ANY,
+        RegCloseKey, RegGetValueA, RegOpenKeyExA, RegSetValueExA, HKEY, HKEY_CURRENT_USER,
+        KEY_SET_VALUE, REG_BINARY, REG_VALUE_TYPE, RRF_RT_ANY,
     },
 };
 
@@ -18,15 +17,14 @@ fn write_registry(buf: &[u8]) {
             KEY_SET_VALUE,
             &mut hkey,
         ).unwrap_or_else(|e| {
-            println!("[!] RegOpenKeyExA Failed With Error: {}", e);
-            std::process::exit(-1);
+            panic!("[!] RegOpenKeyExA Failed With Error: {e}");
         });
         // Enter your key name here
         let _hsetvalue = RegSetValueExA(hkey, s!("victorteste"), 0, REG_BINARY, Some(&buf)).unwrap_or_else(|e| {
-            println!("[!] RegSetValueExA Failed With Error: {}", e);
-            RegCloseKey(hkey);
-            std::process::exit(-1);
+            panic!("[!] RegSetValueExA Failed With Error: {e}");
         });
+
+        RegCloseKey(hkey);
     }
 }
 
@@ -44,8 +42,7 @@ fn read_registry() {
             Some(payload),
             Some(&mut data_size),
         ).unwrap_or_else(|e| {
-            println!("[!] RegGetValueA Failed With Error: {}", e);
-            std::process::exit(-1);
+            panic!("[!] RegGetValueA Failed With Error: {e}");
         });
 
         println!("{:?}", data);
