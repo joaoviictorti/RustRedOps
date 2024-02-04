@@ -36,10 +36,10 @@ unsafe fn get_proc(dll_base: *mut c_void) {
     let addresss = (dll_base as usize + (*export_directory).AddressOfFunctions as usize) as *const u32;
 
     for i in 0..(*export_directory).NumberOfNames as isize {
-        let name_str = CStr::from_ptr((dll_base as usize + *names.offset(i) as usize) as *const i8).to_str().unwrap();
+        let name = CStr::from_ptr((dll_base as usize + *names.offset(i) as usize) as *const i8).to_str().unwrap();
         let ordinal = *ordinals.offset(i);
         let address = (dll_base as usize + *addresss.offset(ordinal as isize) as usize) as *mut c_void;
-        println!("NAME {} | ADDRESS: {:?} | ORDINAL: {}", name_str, address, ordinal);
+        println!("NAME {} | ADDRESS: {:?} | ORDINAL: {}", name, address, ordinal);
     }
 }
 
