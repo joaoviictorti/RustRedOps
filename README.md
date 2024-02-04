@@ -104,7 +104,7 @@ The repository is organized into several projects, each with its own purpose and
 25. [**Enumeration Process**](/Enumeration_Processes)
     - Enumerating processes with Rust.
 
-26 - [**IAT**](/IAT)
+26. [**IAT**](/IAT)
     - IAT obfuscation by replacing GetProcAddress and GetModuleHandle.
 
 ## Resources
