@@ -114,7 +114,7 @@ The repository is organized into several projects, each with its own purpose and
     - It's a project to demonstrate how to create dll using rust.
 
 29. [**WMI**](/WMI_Exec)
-    - Running WMI(Windows Management Instrumentation) queries
+    - Running WMI (Windows Management Instrumentation) queries
 
 ## Resources
 
