@@ -107,6 +107,9 @@ The repository is organized into several projects, each with its own purpose and
 26. [**IAT**](/IAT)
     - IAT obfuscation by replacing GetProcAddress and GetModuleHandle.
 
+27. [**Create Driver**](/Create_Driver)
+    - It's a project to demonstrate how to create a simple driver using rust.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
