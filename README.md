@@ -125,6 +125,9 @@ The repository is organized into several projects, each with its own purpose and
 32. [**Callback Code Execution**](/Callback_Code_Execution)
     - Demonstration of shellcode execution via callback.
 
+33. [**Payload Execution Control**](/Payload_Execution_Control)
+    - Controlling payload execution through Mutex, Events and Semaphores.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
