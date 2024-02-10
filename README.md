@@ -131,6 +131,9 @@ The repository is organized into several projects, each with its own purpose and
 34. [**Parsing PE Headers**](/Parsing_PE)
     -  The code is focused on parsing the PE header of any Windows executable file.
 
+35. [**Block DLL Policy**](/Block_DLL_Policy)
+    - Avoiding the loading of DLLS not signed by Microsoft.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
