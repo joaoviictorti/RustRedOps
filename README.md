@@ -128,6 +128,9 @@ The repository is organized into several projects, each with its own purpose and
 33. [**Payload Execution Control**](/Payload_Execution_Control)
     - Controlling payload execution through Mutex, Events and Semaphores.
 
+34. [**Parsing PE Headers**](/Parsing_PE)
+    -  The code is focused on parsing the PE header of any Windows executable file.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
