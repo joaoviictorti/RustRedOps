@@ -119,6 +119,9 @@ The repository is organized into several projects, each with its own purpose and
 30. [**Enable All Tokens**](/Enable_All_Tokens)
     - Enabling all privilege tokens.
 
+31. [**PPID Spoofing**](/PPID_Spoofing)
+    - Demonstrating the PPID Spoofing technique.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
