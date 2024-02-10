@@ -122,7 +122,7 @@ The repository is organized into several projects, each with its own purpose and
 31. [**PPID Spoofing**](/PPID_Spoofing)
     - Demonstrating the PPID Spoofing technique.
 
-32. [**Shellcode Callback**](/Shellcode_Callback)
+32. [**Callback Code Execution**](/Callback_Code_Execution)
     - Demonstration of shellcode execution via callback.
 
 ## Resources
