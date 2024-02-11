@@ -6,7 +6,6 @@
 </p>
 
 - [Overview](#overview)
-- [Compile](#compile)
 - [Usage](#usage)
 
 # Overview
