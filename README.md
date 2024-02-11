@@ -137,6 +137,9 @@ The repository is organized into several projects, each with its own purpose and
 36. [**Execute Command**](/Execute_Command)
     - Running commands with Rust.
 
+36. [**Payload Placement**](/Payload_Placement)
+    - Storing a shellcode in the .text section and then executing it.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
