@@ -140,6 +140,9 @@ The repository is organized into several projects, each with its own purpose and
 37. [**Payload Placement**](/Payload_Placement)
     - Storing a shellcode in the .text section and then executing it.
 
+38. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
+    - Running shellcode using Fibers.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
