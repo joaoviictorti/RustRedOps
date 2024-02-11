@@ -1,0 +1,7 @@
+[package]
+name = "wmi_exec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wmi = "0.8.0"
