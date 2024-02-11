@@ -9,16 +9,13 @@
 - [Usage](#usage)
 
 # Overview
-
 Simple WMI query demo using Rust
 
 # Usage 
-
-Compiling the DLL:
+You can run with cargo run or the compiled binary directly:
 ```sh
 cargo run
 ```
-The DLL will then be located in the target directory:
 ```sh
 target/release/wmi_exec.exe
 ```
