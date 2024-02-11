@@ -113,7 +113,7 @@ The repository is organized into several projects, each with its own purpose and
 28. [**Create DLL**](/Create_DLL)
     - It's a project to demonstrate how to create dll using rust.
 
-29. [**WMI**](/WMI_Exec)
+29. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
 30. [**Enable All Tokens**](/Enable_All_Tokens)
