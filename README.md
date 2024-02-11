@@ -134,6 +134,9 @@ The repository is organized into several projects, each with its own purpose and
 35. [**Block DLL Policy**](/Block_DLL_Policy)
     - Avoiding the loading of DLLS not signed by Microsoft.
 
+36. [**Execute Command**](/Execute_Command)
+    - Running commands with Rust.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
