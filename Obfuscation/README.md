@@ -18,9 +18,9 @@ You can run with cargo run or the compiled binary directly:
 cargo run -- -f shell.bin -t ipv4
 ```
 ```sh
-target/release/apc_injection.exe -f shell.bin -t ipv4
+target/release/obfuscation.exe -f shell.bin -t ipv4
 ```
 If you have any doubts, you can check the help using --help:
 ```sh
-target/release/apc_injection.exe --help
+target/release/obfuscation.exe --help
 ```
