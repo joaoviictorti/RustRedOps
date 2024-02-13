@@ -1,6 +1,8 @@
 # RustRedOps
 
-![Rust Logo](rust.png)
+<p align="center">
+    <img height="200" alt="OffensiveRust" src="rust.png">
+</p>
 
 
 ## Summary
