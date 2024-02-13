@@ -1,7 +1,7 @@
 # RustRedOps
 
 <p align="center">
-    <img height="200" alt="OffensiveRust" src="rust.png">
+    <img height="200" alt="RustRedOps" src="rust.png">
 </p>
 
 
