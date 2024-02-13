@@ -143,6 +143,9 @@ The repository is organized into several projects, each with its own purpose and
 38. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
     - Running shellcode using Fibers.
 
+39. [**Obfuscation Shellcode**](/Obfuscation)
+    - Shellcode obfuscation using IPV4, IPV6, MAC and UUIDs.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
