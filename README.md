@@ -148,6 +148,9 @@ The repository is organized into several projects, each with its own purpose and
 39. [**Obfuscation Shellcode**](/Obfuscation)
     - Shellcode obfuscation using IPV4, IPV6, MAC and UUIDs.
 
+40. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+    - Running shellcode through WebAssembly.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
