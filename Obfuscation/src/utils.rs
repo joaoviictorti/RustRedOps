@@ -4,14 +4,6 @@ pub struct Args {
     #[clap(short, long, required = true, help = "Insert file shellcode")]
     pub file: String,
 
-    #[clap(
-        short,
-        long,
-        required = false,
-        help = "Signal if you need the rust code to deofuse"
-    )]
-    pub code: bool,
-
     #[clap(short, long, required = true, help = "Insert the type obfuscation")]
     pub technique: Obfuscation,
 }
