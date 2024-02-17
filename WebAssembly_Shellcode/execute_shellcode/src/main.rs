@@ -43,7 +43,7 @@ fn main() -> Result<(), Error> {
         );
 
         println!("[+] Changing Page Permissions");
-        let mut old_protection: PAGE_PROTECTION_FLAGS = PAGE_READWRITE;
+        let mut old_protection: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
             shellcode_addr,
             shellcode_buffer.len(),
