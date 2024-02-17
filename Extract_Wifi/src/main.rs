@@ -1,5 +1,4 @@
 use quick_xml::{events::Event, Reader};
-#[warn(unused_assignments)]
 use std::ptr::null_mut;
 use windows::{
     core::{HSTRING, PCWSTR, PWSTR},
