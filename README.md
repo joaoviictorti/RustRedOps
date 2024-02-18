@@ -154,7 +154,7 @@ The repository is organized into several projects, each with its own purpose and
 41. [**Extract WIFI**](/Extract_Wifi)
     - Extracting WIFI passwords using winapis is a customized form of the netsh command.
 
-42. [**Self Deletion**](/Self-Deletion)
+42. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
 ## Resources
