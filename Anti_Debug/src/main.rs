@@ -3,13 +3,15 @@ use sysinfo::System;
 use windows::Win32::System::Diagnostics::Debug::{
     GetThreadContext, IsDebuggerPresent, CONTEXT, CONTEXT_DEBUG_REGISTERS_AMD64
 };
-use windows::Win32::System::Threading::{GetCurrentThread, PEB};
+use windows::Win32::System::Threading::{GetCurrentThread, PEB, TEB};
+use windows::Win32::System::Kernel::NT_TIB;
 
 fn main() {
     is_debugger_present();
     is_debugger_peb();
     process_list();
     breakpoint_hardware();
+    std::thread::sleep(std::time::Duration::from_secs(20000));
 }
 
 fn is_debugger_present() {
@@ -21,13 +23,8 @@ fn is_debugger_present() {
 }
 
 fn is_debugger_peb() {
-    #[cfg(target_arch = "x86_64")]
-    let peb = get_peb(0x60);
-
-    #[cfg(target_arch = "x86")]
-    let peb = get_peb(0x30);
-
     unsafe {
+        let peb = get_peb();
         if (*peb).BeingDebugged == 1 {
             println!("[!] Debugger Detected! [2]");
         }
@@ -41,6 +38,7 @@ fn process_list() {
         "ida64.exe",
         "VsDebugConsole.exe",
         "msvsmon.exe",
+        "x32dbg.exe"
     ];
 
     let mut system = System::new_all();
@@ -70,19 +68,43 @@ fn breakpoint_hardware() {
     }
 }
 
-
 // Function to recover PEB
-fn get_peb(offset: u64) -> *const PEB {
-    let value: u64;
+unsafe fn get_peb() -> *mut PEB {
+    let teb_offset = ntapi::FIELD_OFFSET!(NT_TIB, Self_) as u32;
 
-    unsafe {
-        asm!(
-            "mov {0}, gs:[{1}]",
-            out(reg) value,
-            in(reg) offset,
-            options(nostack, nomem)
-        )
+    #[cfg(target_arch = "x86_64")]
+    {
+        let teb = __readgsqword(teb_offset) as *mut TEB;
+        return (*teb).ProcessEnvironmentBlock;
     }
 
-    value as *const PEB
+    #[cfg(target_arch = "x86")]
+    {
+        let teb = __readfsdword(teb_offset) as *mut TEB;
+        return (*teb).ProcessEnvironmentBlock;
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn __readgsqword(offset: u32) -> u64 {
+    let output: u64;
+    asm!(
+        "mov {}, gs:[{:e}]",
+        lateout(reg) output,
+        in(reg) offset,
+        options(nostack, pure, readonly),
+    );
+    output
+}
+
+#[cfg(target_arch = "x86")]
+unsafe fn __readfsdword(offset: u32) -> u32 {
+    let output: u32;
+    asm!(
+        "mov {:e}, fs:[{:e}]",
+        lateout(reg) output,
+        in(reg) offset,
+        options(nostack, pure, readonly),
+    );
+    output
 }
