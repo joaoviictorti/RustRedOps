@@ -157,6 +157,9 @@ The repository is organized into several projects, each with its own purpose and
 42. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
+43. [**Binary Info**](/Binary_Info)
+    - This is just a simple demonstration in case you want to include metadata in your Rust binary or change the associated icon.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
