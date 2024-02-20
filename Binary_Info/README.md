@@ -14,7 +14,7 @@ This is just a simple demonstration in case you want to include metadata in your
 
 # Usage 
 
-You can run with cargo run or the compiled binary directly:
+Build the binary:
 ```sh
 cargo build
 ```
