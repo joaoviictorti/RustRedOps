@@ -160,6 +160,9 @@ The repository is organized into several projects, each with its own purpose and
 43. [**Binary Info**](/Binary_Info)
     - This is just a simple demonstration in case you want to include metadata in your Rust binary or change the associated icon.
 
+44. [**NTDLL Unhooking**](/NTDLL_Unhooking)
+    - Running NTDLL Unhooking through a suspended process.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
