@@ -15,24 +15,24 @@ fn main() {
     unsafe {
         let mut negotiate_version = 0;
         let mut wlan_handle = HANDLE::default();
-        let mut _result = 0;
-        _result = WlanOpenHandle(
+        let mut result = 0;
+        result = WlanOpenHandle(
             WLAN_API_VERSION_2_0,
             None,
             &mut negotiate_version,
             &mut wlan_handle,
         );
 
-        if _result != ERROR_SUCCESS.0 {
-            panic!("WlanOpenHandle Failed With Error: {}", _result);
+        if result != ERROR_SUCCESS.0 {
+            panic!("WlanOpenHandle Failed With Error: {}", result);
         }
 
         let mut interface = null_mut();
-        _result = WlanEnumInterfaces(wlan_handle, None, &mut interface);
+        result = WlanEnumInterfaces(wlan_handle, None, &mut interface);
 
-        if _result != ERROR_SUCCESS.0 {
+        if result != ERROR_SUCCESS.0 {
             WlanCloseHandle(wlan_handle, None);
-            panic!("WlanEnumInterfaces Failed With Error: {}", _result);
+            panic!("WlanEnumInterfaces Failed With Error: {}", result);
         }
 
         let interfaces_list = std::slice::from_raw_parts(
@@ -42,16 +42,16 @@ fn main() {
 
         for interface in interfaces_list {
             let mut wlan_profiles_ptr = null_mut();
-            _result = WlanGetProfileList(
+            result = WlanGetProfileList(
                 wlan_handle,
                 &interface.InterfaceGuid,
                 None,
                 &mut wlan_profiles_ptr,
             );
 
-            if _result != ERROR_SUCCESS.0 {
+            if result != ERROR_SUCCESS.0 {
                 WlanCloseHandle(wlan_handle, None);
-                panic!("WlanGetProfileList Failed With Error: {}", _result);
+                panic!("WlanGetProfileList Failed With Error: {}", result);
             }
 
             let wlan_profile_list = std::slice::from_raw_parts(
@@ -65,7 +65,7 @@ fn main() {
                     .to_string();
                 let mut xml_data = PWSTR::null();
                 let mut flag = WLAN_PROFILE_GET_PLAINTEXT_KEY;
-                _result = WlanGetProfile(
+                result = WlanGetProfile(
                     wlan_handle,
                     &interface.InterfaceGuid,
                     PCWSTR(HSTRING::from(profile_info.clone()).as_ptr()),
@@ -75,9 +75,9 @@ fn main() {
                     None,
                 );
 
-                if _result != ERROR_SUCCESS.0 {
+                if result != ERROR_SUCCESS.0 {
                     WlanCloseHandle(wlan_handle, None);
-                    panic!("WlanGetProfile Failed With Error: {}", _result);
+                    panic!("WlanGetProfile Failed With Error: {}", result);
                 }
 
                 let mut len = 0;
