@@ -1,7 +1,7 @@
 # RustRedOps
 <p align="left">
 	<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/made%20with-Rust-red"></a>
-	<a href="#"><img src="https://img.shields.io/badge/platform-osx%2Flinux%2Fwindows-blueviolet"></a>
+	<a href="#"><img src="https://img.shields.io/badge/platform-linux%2Fwindows-blueviolet"></a>
 </p>
 
 <p align="center">
