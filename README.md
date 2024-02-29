@@ -163,6 +163,9 @@ The repository is organized into several projects, each with its own purpose and
 44. [**NTDLL Unhooking**](/NTDLL_Unhooking)
     - Running NTDLL Unhooking through a suspended process.
 
+45. [**Patch ETW**](/Patch_ETW)
+    - Patching ETW.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
