@@ -166,6 +166,9 @@ The repository is organized into several projects, each with its own purpose and
 45. [**Patch ETW**](/Patch_ETW)
     - Patching ETW.
 
+46. [**Patch AMSI**](/Patch_AMSI)
+    - Patching AMSI
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
