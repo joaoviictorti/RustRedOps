@@ -44,7 +44,7 @@ qemu-system-x86_64 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd -dr
 ```
 
 Result:
-![Result UEFI](/img/uefi.png)
+![Result UEFI](img/uefi.png)
 
 
 # References
