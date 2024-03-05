@@ -169,6 +169,9 @@ The repository is organized into several projects, each with its own purpose and
 46. [**Patch AMSI**](/Patch_AMSI)
     - Patching AMSI
 
+47. [**Create UEFI**](/Create_UEFI)
+    - It's a project to demonstrate how to create uefi using rust.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
