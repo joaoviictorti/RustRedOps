@@ -18,6 +18,7 @@
     * [Compiling for a Specific Architecture](#compiling-for-a-specific-architecture)
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
+* [Credits / References / Thanks / Motivation](#credits-/-references-/-thanks-/-motivation)
 
 ## In Construction
 
@@ -238,3 +239,16 @@ To contribute to RustRedOps, follow these steps:
 5. Create the pull request.
 
 Alternatively, consult the GitHub documentation on how to create a pull request.
+
+## Credits / References / Thanks / Motivation
+I would like to express my sincere gratitude to the creators of remarkable projects and fascinating techniques, who provided me with the tools and inspiration needed to create this extraordinary repository.
+
+* https://github.com/MemN0ps
+* https://github.com/hasherezade
+* https://github.com/vxunderground 
+* https://github.com/trickster0
+* https://github.com/BlWasp
+* https://balwurk.com/shellcode-evasion-using-webassembly-and-rust
+* https://github.com/janoglezcampos/rust_syscalls
+* https://github.com/microsoft
+* https://ired.team
