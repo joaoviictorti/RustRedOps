@@ -18,7 +18,7 @@
     * [Compiling for a Specific Architecture](#compiling-for-a-specific-architecture)
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
-* [Credits / References / Thanks / Motivation](#credits-/-references-/-thanks-/-motivation)
+* [Credits / References / Thanks / Motivation](#credits--references--thanks--motivation)
 
 ## In Construction
 
