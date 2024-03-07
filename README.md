@@ -257,3 +257,4 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://ired.team
 * https://github.com/rust-osdev/uefi-rs
 * https://github.com/StephanvanSchaik/windows-kernel-rs
+* https://discord.gg/rust-lang-community (Discord community that helped a lot)
