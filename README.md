@@ -173,7 +173,7 @@ The repository is organized into several projects, each with its own purpose and
 47. [**Create UEFI**](/Create_UEFI)
     - It's a project to demonstrate how to create uefi using rust.
 
-47. [**Named Pipe Server / Client**](/Named_Pipe_Client_Server)
+48. [**Named Pipe Server / Client**](/Named_Pipe_Client_Server)
     - A simple project showing how we can communicate between processes using named pipes.
 
 ## Resources
