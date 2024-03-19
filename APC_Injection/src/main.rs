@@ -43,11 +43,7 @@ fn main() {
             Some(null()),
             THREAD_CREATION_FLAGS(0),
             Some(null_mut()),
-        )
-        .unwrap_or_else(|e| {
-            eprintln!("[!] CreateThread Failed With Error: {e}");
-            exit(-1)
-        });
+        ).unwrap_or_else(|e| panic!("[!] CreateThread Failed With Error: {e}"));
 
         let address = VirtualAlloc(
             Some(null()),
