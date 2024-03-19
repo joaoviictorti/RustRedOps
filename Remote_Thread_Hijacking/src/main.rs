@@ -51,7 +51,7 @@ fn main() -> Result<(), String> {
     ];
 
     println!("[+] Searching for the process handle");
-    let process = find_process("Notepad.exe")?;
+    let process = find_process("notepad.exe")?;
 
     let hprocess = process.0;
     let pid = process.1;
@@ -133,22 +133,23 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn find_process(name: &str) -> Result<(HANDLE, u32), String> {
-    let system = System::new_all();
-    system.processes()
-        .iter()
-        .find_map(|(pid, proc)| {
-            if proc.name() == name {
-                unsafe {
-                    OpenProcess(PROCESS_ALL_ACCESS, false, pid.as_u32())
-                        .map(|handle| Some((handle, pid.as_u32())))
-                        .map_err(|_| "Failed to open process".to_string())
-                        .transpose()
-                }
-            } else {
-                None
-            }
-        }).unwrap_or_else(|| Err("Process not found".to_string()))
+fn find_process(name: &str) -> Result<(HANDLE,u32), String> {
+    let mut system = System::new_all();
+    system.refresh_all();
+
+    let processes: Vec<_> = system
+        .processes()
+        .values()
+        .filter(|process| process.name().to_lowercase() == name)
+        .collect();
+
+    if let Some(process) = processes.into_iter().next() {
+        println!("[i] Process with PID found: {}", process.pid());
+        let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, process.pid().as_u32()).expect("Error opening process!") };
+        return Ok((hprocess, process.pid().as_u32()));
+    }
+
+    Err("Error finding process PID!".to_string())
 }
 
 fn find_thread(pid: u32) -> Result<HANDLE, String> {
