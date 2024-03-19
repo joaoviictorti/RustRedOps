@@ -1,6 +1,5 @@
 use std::{
     ffi::c_void,
-    process::exit,
     ptr::{copy, null, null_mut},
 };
 use windows::Win32::System::Memory::{
