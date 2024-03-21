@@ -45,7 +45,6 @@ unsafe fn ntdll_unhooking() {
     }
 
     let nt_header = ((*dos_header).e_lfanew as usize + address_ntdll as usize) as *mut IMAGE_NT_HEADERS64;
-
     if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
         panic!("[!] INVALID NT SIGNATURE");
     }
@@ -84,7 +83,7 @@ unsafe fn ntdll_unhooking() {
         tmp_nt_local, 
         ntdll_txt_size, 
         PAGE_EXECUTE_WRITECOPY,
-         &mut old_protect
+        &mut old_protect
     ).unwrap_or_else(|e| panic!("[!] VirtualProtect Failed With Error: {e}"));
 
     std::ptr::copy_nonoverlapping(tmp_nt_process, tmp_nt_local, ntdll_txt_size);
