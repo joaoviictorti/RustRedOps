@@ -6,7 +6,7 @@
 </p>
 
 - [Overview](#overview)
-- [Running](#running)
+- [Usage](#usage)
 - [References](#references)
 
 # Overview
