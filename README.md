@@ -176,6 +176,9 @@ The repository is organized into several projects, each with its own purpose and
 48. [**Named Pipe Server / Client**](/Named_Pipe_Client_Server)
     - A simple project showing how we can communicate between processes using named pipes.
 
+49. [**API Hammering**](/API_Hammering)
+    - API Hammering consists of carrying out various actions to delay the malware.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
