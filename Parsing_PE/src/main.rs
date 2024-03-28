@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
 
         let nt_header = (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-            panic!("INVALID NT SIGNATURE");
+            panic!("[!] INVALID NT SIGNATURE");
         }
 
         println!("==================== FILE HEADER ==========================");
