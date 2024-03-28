@@ -72,14 +72,12 @@ fn main() -> io::Result<()> {
         println!(
             "[+] EXCEPTION DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize].Size,
-            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize]
-                .VirtualAddress
+            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize].VirtualAddress
         );
         println!(
             "[+] BASE RELOCATION TABLE WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize].Size,
-            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize]
-                .VirtualAddress
+            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize].VirtualAddress
         );
         println!(
             "[+] TLS DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
@@ -93,8 +91,7 @@ fn main() -> io::Result<()> {
         );
         println!("==================== SECTIONS =============================");
 
-        let mut section_header = (nt_header as usize + std::mem::size_of::<IMAGE_NT_HEADERS64>())
-            as *mut IMAGE_SECTION_HEADER;
+        let mut section_header = (nt_header as usize + std::mem::size_of::<IMAGE_NT_HEADERS64>()) as *mut IMAGE_SECTION_HEADER;
 
         for _ in 0..file_header.NumberOfSections {
             println!("[#] {}", std::str::from_utf8(&(*section_header).Name).unwrap());
