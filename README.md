@@ -179,6 +179,9 @@ The repository is organized into several projects, each with its own purpose and
 49. [**API Hammering**](/API_Hammering)
     - API Hammering consists of carrying out various actions to delay the malware.
 
+50. [**Threadless Injection**](/Threadless_Injection)
+    - Performing Threadless Injection using Rust.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
@@ -261,3 +264,4 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://github.com/rust-osdev/uefi-rs
 * https://github.com/StephanvanSchaik/windows-kernel-rs
 * https://discord.gg/rust-lang-community (Discord community that helped a lot)
+* https://github.com/CCob
