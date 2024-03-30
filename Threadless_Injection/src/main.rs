@@ -147,6 +147,6 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
             SHELLCODE.len(), 
             PAGE_EXECUTE_READWRITE, 
             &mut old_protect
-        ).expect("[!] VirtualProtectEx (2) Failed With Status");
+        ).expect("[!] VirtualProtectEx (3) Failed With Status");
     }   
 }
