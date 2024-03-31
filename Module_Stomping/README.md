@@ -25,4 +25,5 @@ target/release/module_stomping.exe
 
 # References
 
-* https://github.com/CCob/ThreadlessInject
+* https://github.com/WithSecureLabs/ModuleStomping
+* https://www.ired.team/offensive-security/code-injection-process-injection/modulestomping-dll-hollowing-shellcode-injection
