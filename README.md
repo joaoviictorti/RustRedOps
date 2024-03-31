@@ -182,6 +182,9 @@ The repository is organized into several projects, each with its own purpose and
 50. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
+51. [**Compile Encrypt String**](/Compile_Encrypt_String)
+    - Encrypting strings at compile time and decrypting them at runtime.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
@@ -268,3 +271,4 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://github.com/StephanvanSchaik/windows-kernel-rs
 * https://discord.gg/rust-lang-community (Discord community that helped a lot)
 * https://github.com/CCob
+* https://github.com/anvie/litcrypt.rs
