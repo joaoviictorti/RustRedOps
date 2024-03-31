@@ -96,7 +96,7 @@ The repository is organized into several projects, each with its own purpose and
     - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
 
 22. [**Local Payload Execution**](/Local_Payload_Execution)
-   - This project addresses the direct execution of malicious payloads in a system's local environment.
+    - This project addresses the direct execution of malicious payloads in a system's local environment.
 
 23.  [**Local Mapping Injection**](/Local_Mapping_Injection)
     - Performing malicious code injection via memory mapping into local processes.
@@ -138,13 +138,13 @@ The repository is organized into several projects, each with its own purpose and
     - Controlling payload execution through Mutex, Events and Semaphores.
 
 36. [**Process Argument Spoofing**](/Process_Argument_Spoofing)
-   - Exploits the technique of masking or altering the arguments of a process to hide malicious activity.
+    - Exploits the technique of masking or altering the arguments of a process to hide malicious activity.
    
 37. [**Process Injection (DLL)**](/Process_Injection_DLL)
-   - It focuses on injecting dynamic link libraries (DLL) into running processes to execute malicious code.
+    - It focuses on injecting dynamic link libraries (DLL) into running processes to execute malicious code.
 
 38. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
-   - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
+    - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
 
 39. [**Payload Placement**](/Payload_Placement)
     - Storing a shellcode in the .text section and then executing it.
