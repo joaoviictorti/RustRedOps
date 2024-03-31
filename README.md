@@ -185,6 +185,9 @@ The repository is organized into several projects, each with its own purpose and
 51. [**Compile Encrypt String**](/Compile_Encrypt_String)
     - Encrypting strings at compile time and decrypting them at runtime.
 
+52. [**Module Stomping**](/Module_Stomping)
+    - The Module Stomping technique focuses on injecting a shellcode into the entrypoint of the mapped or loaded DLL.
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
