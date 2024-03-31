@@ -72,7 +72,7 @@ The repository is organized into several projects, each with its own purpose and
     - Extracting WIFI passwords using winapis is a customized form of the netsh command.
 
 14. [**Early Bird APC Injection**](/Early_Bird_APC_Injection)
-   - It focuses on a variation of APC injection, executing code before the main process starts.
+    - It focuses on a variation of APC injection, executing code before the main process starts.
 
 15. [**Encryption AES (Shellcode)**](/Encryption_AES_Shellcode)
     - Encrypting / Decrypting a shellcode using AES.
