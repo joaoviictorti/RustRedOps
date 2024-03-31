@@ -98,7 +98,7 @@ The repository is organized into several projects, each with its own purpose and
 22. [**Local Payload Execution**](/Local_Payload_Execution)
     - This project addresses the direct execution of malicious payloads in a system's local environment.
 
-23.  [**Local Mapping Injection**](/Local_Mapping_Injection)
+23. [**Local Mapping Injection**](/Local_Mapping_Injection)
     - Performing malicious code injection via memory mapping into local processes.
 
 24. [**Local Function Stomping Injection**](/Local_Function_Stomping_Injection)
