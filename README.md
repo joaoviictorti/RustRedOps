@@ -255,6 +255,9 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://github.com/MemN0ps
 * https://github.com/hasherezade
 * https://github.com/vxunderground 
+* https://github.com/NUL0x4C
+* https://github.com/mrd0x
+* https://github.com/Cracked5pider
 * https://github.com/trickster0
 * https://github.com/BlWasp
 * https://balwurk.com/shellcode-evasion-using-webassembly-and-rust
