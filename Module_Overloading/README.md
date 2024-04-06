@@ -25,7 +25,7 @@ target/release/module_overloading.exe -f <file.exe / file.dll> --dll "<path-dll>
 
 You can pass arguments to your file, in this example I'm using mimikatz.exe
 ```sh
-cargo run -f mimikatz.exe --dll "C:\Windows\System32\user32.dll" --args "coffee exit"
+cargo run -- -f mimikatz.exe --dll "C:\Windows\System32\user32.dll" --args "coffee exit"
 ```
 
 # References
