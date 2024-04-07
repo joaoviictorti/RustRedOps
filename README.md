@@ -155,40 +155,43 @@ The repository is organized into several projects, each with its own purpose and
 41. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
     - Running shellcode using Fibers.
 
-42. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
+42. [**Process Ghosting**](/Process_Ghosting)
+    - Loading a PE file using the Process Ghosting technique
+
+43. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
     - It addresses the hijacking of threads in remote system processes to carry out malicious actions.
 
-43. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
+44. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
     - It exploits the substitution of functions in remote systems to carry out malicious activities.
 
-44. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
+45. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
     - Performing malicious code injection via memory mapping into remote processes.
 
-45. [**Registry Shellcode**](/Registry_Shellcode)
+46. [**Registry Shellcode**](/Registry_Shellcode)
     - Writing and reading shellcode to the Windows Registry.
 
-46. [**Remove CRT**](/Remove_CRT)
+47. [**Remove CRT**](/Remove_CRT)
     - It focuses on removing the CRT (C Runtime Library) from the binary.
 
-47. [**Request Shellcode**](/Request_Shellcode)
+48. [**Request Shellcode**](/Request_Shellcode)
     - Retrieving shellcode from HTTP requests using Rust.
 
-48. [**Self Deletion**](/Self_Deletion)
+49. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
-49. [**String Hashing**](/String_Hashing)
+50. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-50. [**Syscalls**](/Syscalls)
+51. [**Syscalls**](/Syscalls)
     - This project focuses on the injection attack in the local process, but using syscalls directly.
 
-51. [**Threadless Injection**](/Threadless_Injection)
+52. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
-52. [**WMI**](/WMI)
+53. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
-53. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+54. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
 ## Resources
