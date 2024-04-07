@@ -156,7 +156,7 @@ The repository is organized into several projects, each with its own purpose and
     - Running shellcode using Fibers.
 
 42. [**Process Ghosting**](/Process_Ghosting)
-    - Loading a PE file using the Process Ghosting technique
+    - Loading a PE file using the Process Ghosting technique.
 
 43. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
     - It addresses the hijacking of threads in remote system processes to carry out malicious actions.
