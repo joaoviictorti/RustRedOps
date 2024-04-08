@@ -20,7 +20,7 @@ You can pass a DLL file or an EXE to the binary:
 cargo run -- <file.exe>
 ```
 ```sh
-target/release/process_ghosting.exe -f <file.exe>
+target/release/process_ghosting.exe <file.exe>
 ```
 
 # References
