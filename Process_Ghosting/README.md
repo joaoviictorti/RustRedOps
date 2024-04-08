@@ -15,7 +15,7 @@ Process Ghosting is a technique that uses a temporary file with pending deletion
 
 # Usage 
 
-You can pass a DLL file or an EXE to the binary:
+To execute the file, pass the EXE file that will be executed:
 ```sh
 cargo run -- <file.exe>
 ```
