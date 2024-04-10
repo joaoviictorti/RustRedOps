@@ -1,0 +1,9 @@
+[package]
+name = "process_herpaderping"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ntapi = "0.4.1"
+widestring = "1.1.0"
+winapi = { version = "0.3.9", features = ["fileapi", "userenv", "processthreadsapi"] }
