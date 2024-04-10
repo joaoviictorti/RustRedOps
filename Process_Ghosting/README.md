@@ -20,7 +20,12 @@ To execute the file, pass the EXE file that will be executed:
 cargo run -- <file.exe>
 ```
 ```sh
-target/release/process_ghosting.exe <file.exe>
+target/release/process_ghosting.exe <file.exe> <args>
+```
+
+Real use:
+```sh
+target/release/process_ghosting.exe mimikatz.exe "coffee localtime exit"
 ```
 
 # References
