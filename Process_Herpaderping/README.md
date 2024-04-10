@@ -17,7 +17,7 @@ Process Herpaderping is a technique that aims to hide the true intentions of a p
 
 To execute the file, pass the EXE file that will be executed:
 ```sh
-cargo run -- <file.exe>
+cargo run -- <file.exe> <args> <path>
 ```
 ```sh
 target/release/process_herpaderping.exe <file.exe> <args> <path>
