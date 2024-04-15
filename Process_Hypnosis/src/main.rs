@@ -140,18 +140,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        SymInitialize(HANDLE(0xffffffffffffffffu64 as _), None, true).expect("[!] Failed SymFromName");
+        SymInitialize(HANDLE(0xffffffffffffffffu64 as _), None, true).expect("[!] SymInitialize Failed With Status");
         
         let mut symbol = SYMBOL_INFO::default();
         symbol.SizeOfStruct = size_of::<SYMBOL_INFO>() as u32;
 
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("VirtualAllocEx"), &mut symbol).expect("[!] SymFromName Failed With Status: ");
+        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("VirtualAlocEx"), &mut symbol).expect("[!] SymFromName Failed With Status ");
         println!("\n[+] Example Address VirtualAllocEx: {:?}", symbol.Address as *mut c_void);
         
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("CreateRemoteThread"), &mut symbol).expect("[!] SymFromName Failed With Status: ");
+        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("CreateRemoteThread"), &mut symbol).expect("[!] SymFromName Failed With Status ");
         println!("[+] Example Address CreateRemoteThread: {:?}", symbol.Address as *mut c_void);
 
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("NtProtectVirtualMemory"), &mut symbol).expect("[!] SymFromName Failed With Status: ");
+        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("NtProtectVirtualMemory"), &mut symbol).expect("[!] SymFromName Failed With Status ");
         println!("[+] Example Address NtProtectVirtualMemory: {:?}", symbol.Address as *mut c_void);
     };
 
