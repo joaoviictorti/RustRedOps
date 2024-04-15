@@ -15,7 +15,7 @@ The idea behind Process Hypnosis is to develop a malicious artifact that behaves
 
 # Usage 
 
-To execute the file, pass the EXE file that will be executed:
+Run the program directly or compile and use the exe afterwards:
 ```sh
 cargo run
 ```
