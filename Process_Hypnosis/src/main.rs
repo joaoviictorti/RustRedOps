@@ -145,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut symbol = SYMBOL_INFO::default();
         symbol.SizeOfStruct = size_of::<SYMBOL_INFO>() as u32;
 
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("VirtualAlocEx"), &mut symbol).expect("[!] SymFromName Failed With Status ");
+        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("VirtualAllocEx"), &mut symbol).expect("[!] SymFromName Failed With Status ");
         println!("\n[+] Example Address VirtualAllocEx: {:?}", symbol.Address as *mut c_void);
         
         SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("CreateRemoteThread"), &mut symbol).expect("[!] SymFromName Failed With Status ");
