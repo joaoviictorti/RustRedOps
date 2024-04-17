@@ -1,14 +1,13 @@
-use std::{
-    mem::transmute,
-    process::exit,
-};
+#![allow(unused_must_use)]
+
+use std::mem::transmute;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::Win32::{
     Foundation::{CloseHandle, HANDLE},
     System::{
         Diagnostics::Debug::WriteProcessMemory,
         Memory::{
-            VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READ, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE
+            VirtualAllocEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READ
         },
         Threading::{
             CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
