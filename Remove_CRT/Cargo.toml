@@ -11,7 +11,6 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 strip = "debuginfo"
-opt-level = 0
 
 [dependencies]
 winapi = { version = "0.3.9", features = ["winuser", "memoryapi"] }

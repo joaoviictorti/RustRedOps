@@ -1,7 +1,9 @@
 #![no_std]
 #![no_main]
 
-use core::{arch::asm, mem::transmute, panic::PanicInfo, ptr::null_mut};
+mod export;
+
+use core::{arch::asm, mem::transmute, ptr::null_mut};
 use winapi::um::{
     memoryapi::VirtualAlloc,
     winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE},
@@ -70,7 +72,8 @@ pub extern "C" fn _start() -> ! {
     loop {}
 }
 
+#[cfg(not(test))]
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
