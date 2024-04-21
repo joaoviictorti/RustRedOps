@@ -1,0 +1,16 @@
+[package]
+name = "iat_camouflage"
+version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+panic = "abort"
+strip = "debuginfo"
+
+[profile.release]
+panic = "abort"
+strip = "debuginfo"
+
+
+[dependencies]
+winapi = { version = "0.3.9", features = ["winuser", "synchapi", "errhandlingapi", "processthreadsapi"] }
