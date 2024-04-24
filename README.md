@@ -95,8 +95,8 @@ The repository is organized into several projects, each with its own purpose and
 21. [**IAT Camouflage**](/IAT_Camouflage)
     - Technique for exporting APIs (without executing them) in order to camouflage the IAT and avoid a malicious appearance.
 
-22. [**Local Payload Execution (Linux)**](/Local_Payload_Execution%20(Linux))
-    - This project deals with the direct execution of malicious payloads in the local environment of a system in which we focus on linux.
+22. [**LdrLoadDll_Unhook**](/LdrLoadDll_Unhook)
+    - A proof of concept to inject a springboard to bypass EDR hooks and use LdrLoadDll.
 
 23. [**Local Payload Execution**](/Local_Payload_Execution)
     - This project addresses the direct execution of malicious payloads in a system's local environment.
