@@ -38,12 +38,13 @@ fn main() {
 
     let jmp_addr: *const () = (orign_ldr_load_dll as usize + 0x5) as *const ();
 
-    let orgin:[u8;5]=[0x48,0x89,0x5c,0x24,0x10];
+    let orgin: [u8;5] = [0x48,0x89,0x5c,0x24,0x10];
     let jump_prelude: [u8; 2] = [0x49, 0xBB];
     let jump_epilogue: [u8; 4] = [0x41, 0xFF, 0xE3, 0xC3];
-    let trampoline=unsafe{
+    let trampoline= unsafe {
         VirtualAlloc(None, 19, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)
     };
+    
     unsafe{
         let addr_ptr: *const u8 = std::ptr::addr_of!(jmp_addr) as *const u8;
         copy_memory(trampoline as *mut u8,orgin.as_ptr(),5);
@@ -70,11 +71,11 @@ fn main() {
         
         //get user32.dll
         ldr_loadr_dll(ptr::null_mut(), 0 as PULONG, &mut user32_dll_unicode, &mut  user32handle);
-        let user32handle: HMODULE = unsafe { std::mem::transmute(user32handle) };
+        let user32handle: HMODULE = std::mem::transmute(user32handle);
 
         //MessageBoxA
         let my_message_box_a_addr =   GetProcAddress(user32handle, s!("MessageBoxA")).unwrap() ;
-        let MyMessageBoxA:PMyMessageBoxA=std::mem::transmute(my_message_box_a_addr);
+        let MyMessageBoxA: PMyMessageBoxA = std::mem::transmute(my_message_box_a_addr);
         let text_cstring = CString::new("Hello, World!").unwrap();
         let caption_cstring = CString::new("Title").unwrap();
 
