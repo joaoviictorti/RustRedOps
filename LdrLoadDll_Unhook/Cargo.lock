@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "Unhook"
+name = "LdrLoadDll_Unhook"
 version = "0.1.0"
 dependencies = [
  "winapi",
