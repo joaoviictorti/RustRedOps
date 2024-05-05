@@ -7,7 +7,6 @@
 
 ## Summary
 
-* [In Construction](#in-construction)
 * [Overview](#overview)
 * [Contents](#contents)
 * [Resources](#resources)
@@ -19,10 +18,6 @@
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
 * [Credits / References / Thanks / Motivation](#credits--references--thanks--motivation)
-
-## In Construction
-
-The project is still under development
 
 ## Overview
 
