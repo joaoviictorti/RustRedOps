@@ -9,9 +9,9 @@
 - [Usage](#usage)
 
 # Overview
-Shellcode obfuscation is a fundamental technique in the development of malware, with the aim of avoiding detection by antivirus software and security analysis systems.  This project uses an approach to shellcode obfuscation, incorporating IPv4 and IPv6 addressing formats, MAC addresses and UUIDs.
+Shellcode obfuscation is a fundamental technique in the development of malware, with the aim of avoiding detection by antivirus software and security analysis systems.  This project uses an approach to shellcode obfuscation, incorporating IPv4 and IPv6 addressing formats, MAC addresses, UUIDs and WORDS .
 
-Each directory contains the method needed to perform de-obfuscation for IPV4, IPV6, MAC and UUID techniques.
+Each directory contains the method needed to perform de-obfuscation for IPV4, IPV6, MAC, UUID and WORDS techniques.
 # Usage 
 
 You can run with cargo run or the compiled binary directly:

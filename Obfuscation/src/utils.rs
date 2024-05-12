@@ -14,4 +14,5 @@ pub enum Obfuscation {
     IPV6,
     MAC,
     UUID,
+    WORDS,
 }
