@@ -1,0 +1,17 @@
+[package]
+name = "encryption"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "aes"
+path = "src/aes.rs"
+
+[[bin]]
+name = "rc4"
+path = "src/rc4.rs"
+
+[dependencies]
+rc4 = "0.1.0"
+libaes = "0.7.0"
+windows = { version = "0.52.0", features = ["Win32_System_Memory", "Win32_System_Threading", "Win32_Security", "Win32_Foundation"] }
