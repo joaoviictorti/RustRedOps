@@ -69,133 +69,130 @@ The repository is organized into several projects, each with its own purpose and
 14. [**Early Bird APC Injection**](/Early_Bird_APC_Injection)
     - It focuses on a variation of APC injection, executing code before the main process starts.
 
-15. [**Encryption AES (Shellcode)**](/Encryption_AES_Shellcode)
-    - Encrypting / Decrypting a shellcode using AES.
+15. [**Encryption (Shellcode)**](/Encryption_Shellcode)
+    - Encrypting / Decrypting a shellcode using AES and RC4.
 
-16. [**Encryption RC4 (Shellcode)**](/Encryption_RC4_Shellcode)
-    - Encrypting / Decrypting a shellcode using RC4.
-
-17. [**Enumeration Process**](/Enumeration_Processes)
+16. [**Enumeration Process**](/Enumeration_Processes)
     - Enumerating processes with Rust.
 
-18. [**Enable All Tokens**](/Enable_All_Tokens)
+17. [**Enable All Tokens**](/Enable_All_Tokens)
     - Enabling all privilege tokens.
 
-19. [**Execute Command**](/Execute_Command)
+18. [**Execute Command**](/Execute_Command)
     - Running commands with Rust.
 
-20. [**IAT Obfuscation**](/IAT_Obfuscation)
+19. [**IAT Obfuscation**](/IAT_Obfuscation)
     - IAT obfuscation by replacing GetProcAddress and GetModuleHandle.
 
-21. [**IAT Camouflage**](/IAT_Camouflage)
+20. [**IAT Camouflage**](/IAT_Camouflage)
     - Technique for exporting APIs (without executing them) in order to camouflage the IAT and avoid a malicious appearance.
 
-22. [**LdrLoadDll Unhook**](/LdrLoadDll_Unhook)
+21. [**LdrLoadDll Unhook**](/LdrLoadDll_Unhook)
     - A proof of concept to inject a springboard to bypass EDR hooks and use LdrLoadDll.
 
-23. [**Local Payload Execution**](/Local_Payload_Execution)
+22. [**Local Payload Execution**](/Local_Payload_Execution)
     - This project addresses the direct execution of malicious payloads in a system's local environment.
 
-24. [**Local Mapping Injection**](/Local_Mapping_Injection)
+23. [**Local Mapping Injection**](/Local_Mapping_Injection)
     - Performing malicious code injection via memory mapping into local processes.
 
-25. [**Local Function Stomping Injection**](/Local_Function_Stomping_Injection)
+24. [**Local Function Stomping Injection**](/Local_Function_Stomping_Injection)
     - It focuses on replacing locally running functions with malicious code, changing their default behavior.
 
-26. [**Local Thread Hijacking**](/Local_Thread_Hijacking)
+25. [**Local Thread Hijacking**](/Local_Thread_Hijacking)
     - This project deals with hijacking the threads of processes running on the local system to execute malicious code.
 
-27. [**Minidump-rs**](/Minidump-rs)
+26. [**Minidump-rs**](/Minidump-rs)
     - Dumping the lsass.exe process.
 
-28. [**Module Stomping**](/Module_Stomping)
+27. [**Module Stomping**](/Module_Stomping)
     - The Module Stomping technique focuses on injecting a shellcode into the entrypoint of the mapped or loaded DLL.
 
-29. [**NTDLL Unhooking**](/NTDLL_Unhooking)
+28. [**NTDLL Unhooking**](/NTDLL_Unhooking)
     - Running NTDLL Unhooking through a suspended process.
 
-30. [**Named Pipe Server / Client**](/Named_Pipe_Client_Server)
+29. [**Named Pipe Server / Client**](/Named_Pipe_Client_Server)
     - A simple project showing how we can communicate between processes using named pipes.
 
-31. [**Module Overloading**](/Module_Overloading)
+30. [**Module Overloading**](/Module_Overloading)
     - Module Overloading is a technique that maps a target DLL and replaces its contents with an EXE / DLL file and then executes it.
 
-32. [**Obfuscation Shellcode**](/Obfuscation)
+31. [**Obfuscation Shellcode**](/Obfuscation)
     - Shellcode obfuscation using IPV4, IPV6, MAC and UUIDs.
 
-33. [**PPID Spoofing**](/PPID_Spoofing)
+32. [**PPID Spoofing**](/PPID_Spoofing)
     - Demonstrating the PPID Spoofing technique.
 
-34. [**Parsing PE Headers**](/Parsing_PE)
+33. [**Parsing PE Headers**](/Parsing_PE)
     -  The code is focused on parsing the PE header of any Windows executable file.
 
-35. [**Patch ETW**](/Patch_ETW)
+34. [**Patch ETW**](/Patch_ETW)
     - Patching ETW.
 
-36. [**Patch AMSI**](/Patch_AMSI)
+35. [**Patch AMSI**](/Patch_AMSI)
     - Patching AMSI.
 
-37. [**Payload Execution Control**](/Payload_Execution_Control)
+36. [**Payload Execution Control**](/Payload_Execution_Control)
     - Controlling payload execution through Mutex, Events and Semaphores.
 
-38. [**Process Argument Spoofing**](/Process_Argument_Spoofing)
+37. [**Process Argument Spoofing**](/Process_Argument_Spoofing)
     - Exploits the technique of masking or altering the arguments of a process to hide malicious activity.
    
-39. [**Process Injection (DLL)**](/Process_Injection_DLL)
+38. [**Process Injection (DLL)**](/Process_Injection_DLL)
     - It focuses on injecting dynamic link libraries (DLL) into running processes to execute malicious code.
 
-40. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
+39. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
     - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
 
-41. [**Payload Placement**](/Payload_Placement)
+40. [**Payload Placement**](/Payload_Placement)
     - Storing a shellcode in the .text section and then executing it.
 
-42. [**Process Hypnosis**](/Process_Hypnosis)
+41. [**Process Hypnosis**](/Process_Hypnosis)
     - This technique focuses on controlling the execution flow of a program that is being debugged and obtaining relevant information from it, such as the creation of new threads, loaded modules, exceptions and much more. Or even execute a shellcode.
 
-43. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
+42. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
     - Running shellcode using Fibers.
 
-44. [**Process Ghosting**](/Process_Ghosting)
+43. [**Process Ghosting**](/Process_Ghosting)
     - Loading a PE file using the Process Ghosting technique.
 
-45. [**Process Herpaderping**](/Process_Herpaderping)
+44. [**Process Herpaderping**](/Process_Herpaderping)
     - Obscuring the intentions of a process by modifying the contents of the disk after the image has been mapped.
 
-46. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
+45. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
     - It addresses the hijacking of threads in remote system processes to carry out malicious actions.
 
-47. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
+46. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
     - It exploits the substitution of functions in remote systems to carry out malicious activities.
 
-48. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
+47. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
     - Performing malicious code injection via memory mapping into remote processes.
 
-49. [**Registry Shellcode**](/Registry_Shellcode)
+48. [**Registry Shellcode**](/Registry_Shellcode)
     - Writing and reading shellcode to the Windows Registry.
 
-50. [**Remove CRT**](/Remove_CRT)
+49. [**Remove CRT**](/Remove_CRT)
     - It focuses on removing the CRT (C Runtime Library) from the binary.
 
-51. [**Request Shellcode**](/Request_Shellcode)
+50. [**Request Shellcode**](/Request_Shellcode)
     - Retrieving shellcode from HTTP requests using Rust.
 
-52. [**Self Deletion**](/Self_Deletion)
+51. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
-53. [**String Hashing**](/String_Hashing)
+52. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-54. [**Syscalls**](/Syscalls)
+53. [**Syscalls**](/Syscalls)
     - This project focuses on the injection attack in the local process, but using syscalls directly.
 
-55. [**Threadless Injection**](/Threadless_Injection)
+54. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
-56. [**WMI**](/WMI)
+55. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
-57. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+56. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
 ## Resources
