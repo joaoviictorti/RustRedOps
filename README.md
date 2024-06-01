@@ -84,7 +84,7 @@ The repository is organized into several projects, each with its own purpose and
 19. [**Execute Command**](/Execute_Command)
     - Running commands with Rust.
 
-20. [**IAT Obfuscation**](/IAT)
+20. [**IAT Obfuscation**](/IAT_Obfuscation)
     - IAT obfuscation by replacing GetProcAddress and GetModuleHandle.
 
 21. [**IAT Camouflage**](/IAT_Camouflage)
