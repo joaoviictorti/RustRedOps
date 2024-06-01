@@ -1,7 +1,5 @@
 #![no_std]
 
-#[allow(unused_imports)]
-use core::panic::PanicInfo;
 use winapi::{
     km::wdm::{DbgPrint, DRIVER_OBJECT},
     shared::{ntdef::{NTSTATUS, UNICODE_STRING}, ntstatus::STATUS_SUCCESS},
@@ -9,7 +7,7 @@ use winapi::{
 
 #[cfg(not(test))]
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
