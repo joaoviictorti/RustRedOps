@@ -81,7 +81,7 @@ The repository is organized into several projects, each with its own purpose and
 18. [**Execute Command**](/Execute_Command)
     - Running commands with Rust.
 
-19. [**Hells / Halos / Tartarus Gate**](/Hells_Halo_Tartarus_Gate)
+19. [**Hells / Halos / Tartarus Gate**](/Hells_Halos_Tartarus_Gate)
     - Recovering ssn through the Hells / Halos / Tartarus Gate techniques
 
 20. [**IAT Obfuscation**](/IAT_Obfuscation)
