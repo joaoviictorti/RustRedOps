@@ -46,10 +46,10 @@ pub unsafe fn get_ntdll(peb: *mut PEB) -> *mut c_void {
     
     let dll_base = (*ldr_data_table_entry).DllBase;
 
-    dll_base as *mut core::ffi::c_void
+    dll_base as *mut c_void
 }
 
-pub unsafe fn get_export_ntdll(dll_base: *mut c_void) -> Result<winapi::um::winnt::IMAGE_EXPORT_DIRECTORY, String> {
+pub unsafe fn get_export_ntdll(dll_base: *mut c_void) -> Result<IMAGE_EXPORT_DIRECTORY, String> {
     let dos_header = dll_base as *const IMAGE_DOS_HEADER;
     if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
         return Err(String::from("[!] INVALID DOS SIGNATURE"));
@@ -64,7 +64,7 @@ pub unsafe fn get_export_ntdll(dll_base: *mut c_void) -> Result<winapi::um::winn
         .wrapping_add((*nt_header).OptionalHeader.DataDirectory[0].VirtualAddress as usize) 
         as *const IMAGE_EXPORT_DIRECTORY;
 
-    let image_export_directory = core::ptr::read(export_directory_entry);
+    let image_export_directory = read(export_directory_entry);
 
     Ok(image_export_directory)
 }
@@ -113,7 +113,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.add(5 + idx * DOWN)) as u16;
                             let low = read(function_address.add(4 + idx * DOWN)) as u16;
-                            let ssn = (high << 8) | low - idx as u16;
+                            let ssn = (high << 8) | (low + idx as u16);
                             return Ok(ssn);
                         }
                     // check neighboring syscall up
@@ -126,7 +126,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.offset(5 + idx as isize * UP)) as u16;
                             let low = read(function_address.offset(4 + idx as isize * UP)) as u16;
-                            let ssn = (high << 8) | low + idx as u16;
+                            let ssn = (high << 8) | (low + idx as u16);
                             return Ok(ssn);
                         }
                 }
@@ -145,7 +145,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.add(5 + idx * DOWN)) as u16;
                             let low = read(function_address.add(4 + idx * DOWN)) as u16;
-                            let ssn = (high << 8) | low - idx as u16;
+                            let ssn = (high << 8) | (low + idx as u16);
                             return Ok(ssn);
                         }
                     // check neighboring syscall up
@@ -158,7 +158,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.offset(5 + idx as isize * UP)) as u16;
                             let low = read(function_address.offset(4 + idx as isize * UP)) as u16;
-                            let ssn = (high << 8) | low + idx as u16;
+                            let ssn = (high << 8) | (low + idx as u16);
                             return Ok(ssn);
                         }
                 }
