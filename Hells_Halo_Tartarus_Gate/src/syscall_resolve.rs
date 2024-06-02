@@ -113,7 +113,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.add(5 + idx * DOWN)) as u16;
                             let low = read(function_address.add(4 + idx * DOWN)) as u16;
-                            let ssn = (high << 8) | (low + idx as u16);
+                            let ssn = (high << 8) | (low - idx as u16);
                             return Ok(ssn);
                         }
                     // check neighboring syscall up
@@ -145,7 +145,7 @@ pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_d
                         {
                             let high = read(function_address.add(5 + idx * DOWN)) as u16;
                             let low = read(function_address.add(4 + idx * DOWN)) as u16;
-                            let ssn = (high << 8) | (low + idx as u16);
+                            let ssn = (high << 8) | (low - idx as u16);
                             return Ok(ssn);
                         }
                     // check neighboring syscall up
