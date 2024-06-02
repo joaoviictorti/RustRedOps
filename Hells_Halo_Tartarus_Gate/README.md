@@ -16,7 +16,7 @@ The Hells / Halos / Tartarus Gate techniques are advanced methods for dynamicall
 To see the execution and the syscalls being retrieved, use the following command:
 ```shell
 $env:RUST_LOG="debug"
-cargo  test
+cargo test
 ```
 
 # References
