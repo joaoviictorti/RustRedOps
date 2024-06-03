@@ -3,7 +3,7 @@ use ntapi::{
     ntpebteb::{PEB, TEB},
     winapi::ctypes::c_void,
 };
-use std::{arch::asm, ffi::CString, panic, ptr::null_mut};
+use std::{ffi::CString, panic, ptr::null_mut};
 use windows::{
     core::PSTR,
     Win32::System::{
@@ -23,8 +23,7 @@ unsafe fn ntdll_unhooking() {
     let process = CString::new("C:\\Windows\\System32\\calc.exe").unwrap().into_raw() as _;
     let address_ntdll = ntdll_local_address("ntdll.dll".to_string()).expect("[!] Error retrieving ntdll");
     
-    let mut startup_info = STARTUPINFOA::default();
-    startup_info.cb = std::mem::size_of::<STARTUPINFOA>() as u32;
+    let startup_info = STARTUPINFOA { cb: std::mem::size_of::<STARTUPINFOA>() as u32, ..Default::default() };
     let mut process_information = PROCESS_INFORMATION::default();
     CreateProcessA(
         None,
@@ -108,7 +107,7 @@ unsafe fn ntdll_local_address(dll: String) -> Result<*mut c_void, ()> {
             (*list_entry).BaseDllName.Buffer,
             ((*list_entry).BaseDllName.Length / 2) as usize,
         );
-        let dll_name = String::from_utf16(&buffer)
+        let dll_name = String::from_utf16(buffer)
             .unwrap()
             .to_string()
             .to_lowercase();
@@ -128,37 +127,15 @@ unsafe fn get_peb() -> *mut PEB {
 
     #[cfg(target_arch = "x86_64")]
     {
+        use ntapi::winapi_local::um::winnt::__readgsqword;
         let teb = __readgsqword(teb_offset) as *mut TEB;
-        return (*teb).ProcessEnvironmentBlock;
+        (*teb).ProcessEnvironmentBlock
     }
 
     #[cfg(target_arch = "x86")]
     {
+        use ntapi::winapi_local::um::winnt::__readfsdword;
         let teb = __readfsdword(teb_offset) as *mut TEB;
-        return (*teb).ProcessEnvironmentBlock;
+        (*teb).ProcessEnvironmentBlock
     }
-}
-
-#[cfg(target_arch = "x86_64")]
-unsafe fn __readgsqword(offset: u32) -> u64 {
-    let output: u64;
-    asm!(
-        "mov {}, gs:[{:e}]",
-        lateout(reg) output,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
-    output
-}
-
-#[cfg(target_arch = "x86")]
-unsafe fn __readfsdword(offset: u32) -> u32 {
-    let output: u32;
-    asm!(
-        "mov {:e}, fs:[{:e}]",
-        lateout(reg) output,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
-    output
 }
