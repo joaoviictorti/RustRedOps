@@ -41,8 +41,7 @@ pub unsafe fn get_ssn(function_name: u32) -> u16 {
 }
 
 pub unsafe fn get_ntdll(peb: *mut PEB) -> *mut c_void {
-    let ldr_data_table_entry = ((*(*(*peb).Ldr).InMemoryOrderModuleList.Flink).Flink as *const u8)
-        .offset(-0x10) as *const LDR_DATA_TABLE_ENTRY;
+    let ldr_data_table_entry = ((*(*(*peb).Ldr).InMemoryOrderModuleList.Flink).Flink as *const u8).offset(-0x10) as *const LDR_DATA_TABLE_ENTRY;
     
     let dll_base = (*ldr_data_table_entry).DllBase;
 
@@ -60,16 +59,18 @@ pub unsafe fn get_export_ntdll(dll_base: *mut c_void) -> Result<IMAGE_EXPORT_DIR
         return Err(String::from("[!] INVALID NT SIGNATURE"));
     }
 
-    let export_directory_entry = dll_base
-        .wrapping_add((*nt_header).OptionalHeader.DataDirectory[0].VirtualAddress as usize) 
-        as *const IMAGE_EXPORT_DIRECTORY;
+    let export_directory_entry = dll_base.wrapping_add((*nt_header).OptionalHeader.DataDirectory[0].VirtualAddress as usize) as *const IMAGE_EXPORT_DIRECTORY;
 
     let image_export_directory = read(export_directory_entry);
 
     Ok(image_export_directory)
 }
 
-pub unsafe fn search_ssn(function_name: u32, module: *mut c_void, image_export_directory: IMAGE_EXPORT_DIRECTORY) -> Result<u16, ()> {
+pub unsafe fn search_ssn(
+    function_name: u32, 
+    module: *mut c_void, 
+    image_export_directory: IMAGE_EXPORT_DIRECTORY
+) -> Result<u16, ()> {
     let address_functions = (module as usize + image_export_directory.AddressOfFunctions as usize) as *const u32;
     let address_names = (module as usize + image_export_directory.AddressOfNames as usize) as *const u32;
     let address_ordinals = (module as usize + image_export_directory.AddressOfNameOrdinals as usize) as *const u16;
