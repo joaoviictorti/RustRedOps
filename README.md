@@ -187,7 +187,7 @@ The repository is organized into several projects, each with its own purpose and
     - Creating string hashes to perform hiding.
 
 54. [**Syscalls**](/Syscalls)
-    - This project focuses on the local process injection attack, but using syscalls.
+    - Running direct and indirect syscall.
 
 55. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
