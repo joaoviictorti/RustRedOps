@@ -9,14 +9,7 @@
 - [Usage](#usage)
 
 # Overview
-This repository focuses on the direct use of syscalls to carry out attacks within the application, while the other repositories in this project focus on the use of direct/indirect syscalls, but search for SSNs dynamically.
+This repository focuses on the use of Direct / Indirect syscall using the Hells / Halos / Tartarus Gate techniques together. It currently has x64 support, but I'll make some updates to support x86.
 
 # Usage 
-
-You can run with cargo run or the compiled binary directly:
-```sh
-cargo run
-```
-```sh
-target/release/syscalls.exe
-```
+The "usage" folder contains the code being used and the "syscall" folder contains the library.

@@ -1,0 +1,12 @@
+[package]
+name = "syscall"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+_DIRECT_ = []
+_INDIRECT_ = []
+
+[dependencies]
+ntapi = "0.4.1"
+winapi = { version = "0.3.9", features = ["processthreadsapi"] }

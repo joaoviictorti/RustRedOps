@@ -12,10 +12,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "syscalls"
+name = "syscall"
 version = "0.1.0"
 dependencies = [
  "ntapi",
+ "winapi",
+]
+
+[[package]]
+name = "teste"
+version = "0.1.0"
+dependencies = [
+ "syscall",
  "winapi",
 ]
 
