@@ -1,9 +1,8 @@
 [package]
-name = "projeto_uefi"
+name = "uefi-rs"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 log = "0.4.21"
-uefi = "0.26.0"
-uefi-services = "0.23.0"
+uefi = { version = "0.28.0", features = ["logger", "panic_handler"] }

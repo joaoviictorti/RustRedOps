@@ -31,11 +31,11 @@ When you run it, it shows some information and the interesting part is the "Inst
 
 After installing qemu, run the command to create the "esp/boot" folder, which will contain our ".efi" file:
 ```sh
-mkdir -p esp/boot
+mkdir -p esp/efi/boot
 ```
 Take the ".efi" file that was generated, rename it to "bootx64.efi" and move it to the "esp/boot" folder:
 ```sh
-mv bootx64.efi esp/boot
+mv bootx64.efi esp/efi/boot
 ```
 
 Finally, run "qemu":
