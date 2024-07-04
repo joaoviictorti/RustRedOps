@@ -24,7 +24,7 @@ use {
 unsafe fn find_thread() -> Result<HANDLE, String> {
     let process_pid = GetCurrentProcessId();
     let thread_pid = GetCurrentThreadId();
-    let hsnap = unsafe {CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|_| "Failed to create snapshot".to_string())?};
+    let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|e| format!("CreateToolhelp32Snapshot Failed With Error: {e}"))?;
     let mut thr = THREADENTRY32 {
         dwSize: size_of::<THREADENTRY32>() as u32,
         ..Default::default()
