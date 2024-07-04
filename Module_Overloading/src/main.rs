@@ -123,11 +123,11 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
     
     unsafe {
         if pe.is_dll {
-            let func_exe =  std::mem::transmute::<_, Dll>(entrypoint);
-            func_exe(HINSTANCE(address as isize), DLL_PROCESS_ATTACH, null_mut());
+            let func_dll =  std::mem::transmute::<_, Dll>(entrypoint);
+            func_dll(HINSTANCE(address as isize), DLL_PROCESS_ATTACH, null_mut());
         } else {
-            let func_dll =  std::mem::transmute::<_, Exe>(entrypoint);
-            func_dll();
+            let func_exe =  std::mem::transmute::<_, Exe>(entrypoint);
+            func_exe();
         }
     };
 
