@@ -3,22 +3,26 @@
 mod utils;
 mod cmd;
 
-use std::{ffi::c_void, mem::size_of, ptr::null_mut};
-use clap::Parser;
-use cmd::Args;
-use ntapi::ntmmapi::{NtMapViewOfSection, ViewShare};
-use utils::{get_peb, image_ordinal, image_snap_by_ordinal, Dll, Exe, BASE_RELOCATION_ENTRY, PE};
-use windows::core::PCSTR;
-use windows::Wdk::Storage::FileSystem::NtCreateSection;
-use windows::Win32::Foundation::{FARPROC, GENERIC_READ, HANDLE, HINSTANCE, STATUS_SUCCESS};
-use windows::Win32::Storage::FileSystem::{FILE_ATTRIBUTE_NORMAL, FILE_SHARE_MODE, OPEN_EXISTING, CreateFileA};
-use windows::Win32::System::{
-    Memory::*,
-    SystemServices::*,
-    Diagnostics::Debug::*,
-    LibraryLoader::{LoadLibraryA, GetProcAddress},
-    WindowsProgramming::IMAGE_THUNK_DATA64,
-    Threading::RTL_USER_PROCESS_PARAMETERS
+use {
+    cmd::Args,
+    clap::Parser,
+    std::{ffi::c_void, mem::size_of, ptr::null_mut},
+    ntapi::ntmmapi::{NtMapViewOfSection, ViewShare},
+    windows::core::PCSTR,
+    windows::Wdk::Storage::FileSystem::NtCreateSection,
+    utils::{get_peb, image_ordinal, image_snap_by_ordinal, Dll, Exe, BASE_RELOCATION_ENTRY, PE},
+    windows::Win32::{
+        System::{
+            Memory::*,
+            SystemServices::*,
+            Diagnostics::Debug::*,
+            LibraryLoader::{LoadLibraryA, GetProcAddress},
+            WindowsProgramming::IMAGE_THUNK_DATA64,
+            Threading::RTL_USER_PROCESS_PARAMETERS
+        },
+        Storage::FileSystem::{FILE_ATTRIBUTE_NORMAL, FILE_SHARE_MODE, OPEN_EXISTING, CreateFileA},
+        Foundation::{FARPROC, GENERIC_READ, HANDLE, HINSTANCE, STATUS_SUCCESS},
+    },
 };
 
 fn main() -> Result<(), String> {
@@ -32,6 +36,17 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
+/// Loads the executable into memory and prepares it for execution.
+///
+/// # Arguments
+///
+/// * `pe` - A mutable reference to a PE struct representing the loaded PE file.
+/// * `module_dll` - A pointer to the loaded DLL module.
+/// * `args` - Command line arguments to be passed to the executable.
+///
+/// # Returns
+///
+/// A `Result` which is `Ok` if the executable is successfully loaded and `Err` if there is an error.
 fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), String>{
     let address = unsafe {
         VirtualAlloc(
@@ -43,7 +58,7 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
     };
 
     if address.is_null() {
-        return Err("VirtualAlloc Failed".to_string());
+        return Err(String::from("VirtualAlloc Failed"));
     }
 
     let mut tmp_section = pe.section_header;
@@ -63,13 +78,14 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
                 );
 
             } else {
-                return Err("Section outside the buffer limits".to_string());
+                return Err(String::from("Section outside the buffer limits"));
             }
 
             tmp_section = (tmp_section as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
         }
     }
 
+    /// Adjusting the IAT header
     fixing_iat(pe, address)?;
 
     let mut old_protect = PAGE_PROTECTION_FLAGS(0);
@@ -84,6 +100,8 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
 
     unsafe { std::ptr::copy_nonoverlapping(address, module_dll, (*pe.nt_header).OptionalHeader.SizeOfImage as usize) };
 
+
+    /// Adjusting relocations
     realoc_data(pe, module_dll)?;
 
     unsafe { 
@@ -95,8 +113,10 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
         ).map_err(|e| format!("[!] VirtualProtect (2) Failed With Status: {e}"))?; 
     };
 
+    /// Adjusting the arguments (if any)
     fixing_arguments(args);
 
+    /// Adjusting memory permissions
     fixing_memory(pe, module_dll)?;
 
     let entrypoint = unsafe { (module_dll as usize + (*pe.nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void };
@@ -109,26 +129,30 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
             let func_dll =  std::mem::transmute::<_, Exe>(entrypoint);
             func_dll();
         }
-
     };
 
     Ok(())
 }
 
-
+/// Initializes the PE structure by reading and parsing the PE headers from the given buffer.
 ///
-/// Initializing the PE headers of the next target level
+/// # Arguments
 ///
+/// * `buffer` - A vector of bytes representing the PE file.
+///
+/// # Returns
+///
+/// A `Result` containing a `PE` struct if the initialization is successful, or a `String` error message if it fails.
 fn initialize_pe(buffer: Vec<u8>) -> Result<PE, String> {
     unsafe {
         let dos_header = buffer.as_ptr() as *mut IMAGE_DOS_HEADER;
         if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
-            return Err("Invalid DOS SIGNATURE".to_string());
+            return Err(String::from("Invalid DOS SIGNATURE"));
         }
 
         let nt_header = (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-            return Err("INVALID NT SIGNATURE".to_string());
+            return Err(String::from("INVALID NT SIGNATURE"));
         }
 
         let mut section_header = (nt_header as usize + size_of::<IMAGE_NT_HEADERS64>()) as *mut IMAGE_SECTION_HEADER;
@@ -154,12 +178,17 @@ fn initialize_pe(buffer: Vec<u8>) -> Result<PE, String> {
         Ok(pe)
     }
 
-
 }
 
+/// Loads a DLL file into the process memory.
 ///
-/// Map the DLL to the process
-/// 
+/// # Arguments
+///
+/// * `dll` - A string representing the path to the DLL file.
+///
+/// # Returns
+///
+/// A `Result` containing a pointer to the loaded DLL module if successful, or a `String` error message if it fails.
 fn load_dll(dll: String) -> Result<*mut c_void, String> {
     unsafe {
         let dll = std::ffi::CString::new(dll).unwrap().into_raw();
@@ -214,16 +243,23 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
         let dos_header = mapped_module as *mut IMAGE_DOS_HEADER;
         let nt_header = (mapped_module as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-            return Err("IMAGE SIGNATURE INVALID".to_string());
+            return Err(String::from("IMAGE SIGNATURE INVALID"));
         }
 
         Ok(mapped_module as *mut c_void)
     }
 }
 
+/// Adjusts the base relocations of the PE file to the new address.
 ///
-/// Create the PE address relationship
-/// 
+/// # Arguments
+///
+/// * `pe` - A mutable reference to a PE struct representing the loaded PE file.
+/// * `address` - The base address of the allocated memory for the PE file.
+///
+/// # Returns
+///
+/// A `Result` which is `Ok` if the relocations are successfully adjusted, or `Err` if there is an error.
 fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
         let mut base_relocation = address.offset(pe.entry_basereloc_data.VirtualAddress as isize) as *mut IMAGE_BASE_RELOCATION;
@@ -259,7 +295,7 @@ fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
                     }
                     IMAGE_REL_BASED_ABSOLUTE => {}
                     _ => {
-                        return Err("Unknown relocation type".to_string());
+                        return Err(String::from("Unknown relocation type"));
                     }
                 }
 
@@ -273,9 +309,16 @@ fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     Ok(())
 }
 
+/// Fixes the Import Address Table (IAT) by loading the required DLLs and resolving the function addresses.
 ///
-/// Solving the IAT by loading the DLLs into the process and then filling the IAT with their functions.
-/// 
+/// # Arguments
+///
+/// * `pe` - A reference to a PE struct representing the loaded PE file.
+/// * `address` - The base address of the allocated memory for the PE file.
+///
+/// # Returns
+///
+/// A `Result` which is `Ok` if the IAT is successfully fixed, or `Err` if there is an error.
 fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
         let entries = (pe.entry_import_data.Size as usize / size_of::<IMAGE_IMPORT_DESCRIPTOR>()) as u32;
@@ -291,7 +334,7 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
 
             let dll_name = address.offset((*img_import_descriptor).Name as isize) as *const i8;
             let mut thunk_size = 0;
-            let h_module = LoadLibraryA(PCSTR(dll_name as _)).unwrap_or_else(|e| panic!("LoadLibrary Failed With Status: {}", e));
+            let h_module = LoadLibraryA(PCSTR(dll_name as _)).map_err(|e| format!("LoadLibrary Failed With Status: {e}"));
 
             loop {
                 let original_first_chunk = address.offset(original_first_chunk_rva as isize + thunk_size) as *mut IMAGE_THUNK_DATA64;
@@ -329,9 +372,16 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
     Ok(())
 }
 
+/// Sets the appropriate memory protections for each section of the PE file.
 ///
-/// Defining memory permissions for each section.
-/// 
+/// # Arguments
+///
+/// * `pe` - A mutable reference to a PE struct representing the loaded PE file.
+/// * `address` - The base address of the allocated memory for the PE file.
+///
+/// # Returns
+///
+/// A `Result` which is `Ok` if the memory protections are successfully set, or `Err` if there is an error.
 fn fixing_memory(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
         for _ in 0..(*pe.nt_header).FileHeader.NumberOfSections {
@@ -389,9 +439,11 @@ fn fixing_memory(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     Ok(())
 }
 
+/// Adjusts the command line arguments for the target binary.
 ///
-/// Readjust the arguments to be passed to the target binary (If necessary)
-/// 
+/// # Arguments
+///
+/// * `args` - The command line arguments to be passed to the executable.
 fn fixing_arguments(args: &str) {
     let peb = unsafe { get_peb() };
     let process_parameters = unsafe { (*peb).ProcessParameters as *mut RTL_USER_PROCESS_PARAMETERS };
