@@ -21,6 +21,13 @@ use {
     },
 };
 
+// https://github.com/microsoft/win32metadata/issues/1044
+#[repr(align(16))]
+#[derive(Default)]
+struct AlignedContext {
+    ctx: CONTEXT
+}
+
 unsafe fn find_thread() -> Result<HANDLE, String> {
     let process_pid = GetCurrentProcessId();
     let thread_pid = GetCurrentThreadId();
@@ -105,20 +112,22 @@ fn main() -> Result<(), String> {
             &mut oldprotect,
         ).map_err(|e| format!("VirtualProtect Failed With Error: {e}"))?;
 
-        let mut ctx_thread = CONTEXT {
-            ContextFlags: CONTEXT_ALL_AMD64,
-            ..Default::default()
+        let mut ctx_thread = AlignedContext {
+            ctx: CONTEXT {
+                ContextFlags: CONTEXT_ALL_AMD64,
+                ..Default::default()
+            },
         };
 
         SuspendThread(hthread);
 
         println!("[+] Retrieving thread context");
-        GetThreadContext(hthread, &mut ctx_thread).map_err(|e| format!("GetThreadContext Failed With Error: {e}"))?;
+        GetThreadContext(hthread, &mut ctx_thread.ctx).map_err(|e| format!("GetThreadContext Failed With Error: {e}"))?;
 
-        ctx_thread.Rip = address as u64;
+        ctx_thread.ctx.Rip = address as u64;
 
         println!("[+] Setting the thread context");
-        SetThreadContext(hthread, &ctx_thread).map_err(|e| format!("SetThreadContext Failed With Error: {e}"))?;
+        SetThreadContext(hthread,  &ctx_thread.ctx).map_err(|e| format!("SetThreadContext Failed With Error: {e}"))?;
 
         println!("[+] Thread Executed!");
 
