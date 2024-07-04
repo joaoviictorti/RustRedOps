@@ -3,7 +3,7 @@ use ntapi::{
     ntpebteb::{PEB, TEB},
     winapi::ctypes::c_void,
 };
-use std::{arch::asm, ffi::CStr, slice};
+use std::{ffi::CStr, slice};
 use windows::Win32::System::{
     Diagnostics::Debug::IMAGE_NT_HEADERS64,
     Kernel::NT_TIB,
@@ -73,37 +73,16 @@ unsafe fn get_peb() -> *mut PEB {
 
     #[cfg(target_arch = "x86_64")]
     {
+        use ntapi::winapi_local::um::winnt::__readgsqword;
+
         let teb = __readgsqword(teb_offset) as *mut TEB;
         return (*teb).ProcessEnvironmentBlock;
     }
 
     #[cfg(target_arch = "x86")]
     {
+        use ntapi::winapi_local::um::winnt::__readfsdword;
         let teb = __readfsdword(teb_offset) as *mut TEB;
         return (*teb).ProcessEnvironmentBlock;
     }
-}
-
-#[cfg(target_arch = "x86_64")]
-unsafe fn __readgsqword(offset: u32) -> u64 {
-    let output: u64;
-    asm!(
-        "mov {}, gs:[{:e}]",
-        lateout(reg) output,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
-    output
-}
-
-#[cfg(target_arch = "x86")]
-unsafe fn __readfsdword(offset: u32) -> u32 {
-    let output: u32;
-    asm!(
-        "mov {:e}, fs:[{:e}]",
-        lateout(reg) output,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
-    output
 }
