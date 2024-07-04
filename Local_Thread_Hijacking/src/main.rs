@@ -31,7 +31,7 @@ struct AlignedContext {
 unsafe fn find_thread() -> Result<HANDLE, String> {
     let process_pid = GetCurrentProcessId();
     let thread_pid = GetCurrentThreadId();
-    let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|e| format!("CreateToolhelp32Snapshot Failed With Error: {e}"))?;
+    let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).expect("CreateToolhelp32Snapshot Failed With Error");
     let mut thr = THREADENTRY32 {
         dwSize: size_of::<THREADENTRY32>() as u32,
         ..Default::default()
@@ -40,9 +40,7 @@ unsafe fn find_thread() -> Result<HANDLE, String> {
     if Thread32First(hsnap, &mut thr).is_ok() {
         loop {
             if thr.th32OwnerProcessID == process_pid && thr.th32ThreadID != thread_pid {
-                let h_thread = unsafe {
-                    OpenThread(THREAD_ALL_ACCESS, false, thr.th32ThreadID).expect("Failed to open thread")
-                };
+                let h_thread = OpenThread(THREAD_ALL_ACCESS, false, thr.th32ThreadID).expect("Failed to open thread");
                 return Ok(h_thread);
             }
 
