@@ -3,11 +3,11 @@
 #[cfg(not(test))]
 extern crate wdk_panic;
 
-use kernel_log::KernelLogger;
 #[cfg(not(test))]
 use wdk_alloc::WDKAllocator;
 
 use wdk_sys::{DRIVER_OBJECT, NTSTATUS, PCUNICODE_STRING, STATUS_SUCCESS};
+use kernel_log::KernelLogger;
 
 #[cfg(not(test))]
 #[global_allocator]
