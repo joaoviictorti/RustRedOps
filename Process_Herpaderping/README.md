@@ -25,7 +25,7 @@ target/release/process_herpaderping.exe <file.exe> <args> <path>
 
 Real use:
 ```sh
-target/release/process_herpaderping.exe mimikatz.exe "coffee localtime exit" C:\Windows\System32\OneDriveSetup.exe
+target/release/process_herpaderping.exe mimikatz.exe "coffee localtime" C:\Windows\System32\OneDriveSetup.exe
 ```
 
 # References
