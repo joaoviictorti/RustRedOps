@@ -1,37 +1,16 @@
+extend = "target/rust-driver-makefile.toml"
+
 [env]
-VC_BUILD_DIR="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
-[env.development]
-TARGET_PATH = "target/debug"
+[config]
+load_script = '''
+#!@rust
+//! ```cargo
+//! [dependencies]
+//! wdk-build = "0.2.0"
+//! ```
+#![allow(unused_doc_comments)]
 
-[env.production]
-TARGET_PATH = "target/release"
-BUILD_RELEASE = "--release"
-
-[tasks.clean-cert]
-script = '''
-# Remove the self-signed certificate.
-if exist DriverCertificate.cer ( rm DriverCertificate.cer )
-'''
-
-[tasks.build-driver]
-script = '''
-cargo b %BUILD_FLAGS%
-'''
-
-[tasks.rename]
-ignore_errors = true
-script = '''
-cd %TARGET_PATH%
-rename driver.dll driver.sys
-'''
-
-[tasks.sign]
-dependencies = ["build-driver", "rename"]
-script = '''
-call "%VC_BUILD_DIR%"
-
-if not exist DriverCertificate.cer ( makecert -r -pe -ss PrivateCertStore -n CN=DriverCertificate DriverCertificate.cer ) else ( echo Certificate already exists. )
-
-signtool sign /a /v /s PrivateCertStore /n DriverCertificate /fd certHash /t http://timestamp.digicert.com %TARGET_PATH%/driver.sys
+wdk_build::cargo_make::load_rust_driver_makefile()?
 '''
