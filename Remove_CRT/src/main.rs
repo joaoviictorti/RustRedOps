@@ -4,9 +4,8 @@
 mod export;
 
 use core::{arch::asm, mem::transmute, ptr::null_mut};
-use winapi::um::{
-    memoryapi::VirtualAlloc,
-    winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE},
+use windows_sys::Win32::System::Memory::{
+    VirtualAlloc, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE
 };
 
 #[no_mangle]

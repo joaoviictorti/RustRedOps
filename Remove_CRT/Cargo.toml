@@ -13,4 +13,4 @@ panic = "abort"
 strip = "debuginfo"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "memoryapi"] }
+windows-sys = { version = "0.59.0", features = ["Win32_System_Memory"] }
