@@ -41,10 +41,7 @@ fn main() {
             panic!("[!] LoadLibraryA Failed With Error: {e}");
         });
 
-        let func = GetProcAddress(h_module, s!("MessageBoxA")).unwrap_or_else(|| {
-            panic!("[!] GetProcAddress Failed");
-        });
-
+        let func = GetProcAddress(h_module, s!("MessageBoxA")).expect("[!] GetProcAddress Failed");
         let func_ptr = transmute::<_, *mut c_void>(func);
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
