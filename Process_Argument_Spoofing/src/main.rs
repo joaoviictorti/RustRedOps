@@ -1,14 +1,23 @@
-use memoffset::offset_of;
 use std::{ffi::c_void, mem::size_of};
 use windows::core::{w, PWSTR};
-use windows::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING};
-use windows::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory};
-use windows::Win32::System::Threading::{
-    CreateProcessW, ResumeThread, WaitForSingleObject, CREATE_NO_WINDOW, CREATE_SUSPENDED,
-    INFINITE, PEB, PROCESS_BASIC_INFORMATION, PROCESS_INFORMATION, RTL_USER_PROCESS_PARAMETERS,
-    STARTUPINFOW,
+use windows::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
+use windows::Win32::System::{
+    Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory},
+    Threading::{
+        CreateProcessW, ResumeThread, WaitForSingleObject, CREATE_NO_WINDOW, CREATE_SUSPENDED,
+        INFINITE, PEB, PROCESS_BASIC_INFORMATION, PROCESS_INFORMATION, RTL_USER_PROCESS_PARAMETERS,
+        STARTUPINFOW,
+    },
 };
+
+macro_rules! offset_of {
+    ($type:ty, $field:ident) => {{
+        let base: *const $type = std::ptr::null();
+        let field_ptr = &(*base).$field as *const _ as usize;
+        field_ptr - base as usize
+    }};
+}
 
 fn main() {
     let mut startup_info = STARTUPINFOW::default();
@@ -98,6 +107,7 @@ fn main() {
         // Changing the size of CommandLine.Length
         let new_len_power: usize = "powershell.exe\0".encode_utf16().count() * size_of::<u16>();
         let offset = ppeb.ProcessParameters as usize + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine) + offset_of!(UNICODE_STRING, Length);
+        
         WriteProcessMemory(
             hprocess,
             offset as _,
