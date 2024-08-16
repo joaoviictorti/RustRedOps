@@ -175,7 +175,7 @@ The repository is organized into several projects, each with its own purpose and
     - Writing and reading shellcode to the Windows Registry.
 
 50. [**Remove CRT**](/Remove_CRT)
-    - It focuses on removing the CRT (C Runtime Library) from the binary.
+    - It focuses on removing the CRT (C Runtime Library) at runtime and some additional flags to remove information from the binary.
 
 51. [**Request Shellcode**](/Request_Shellcode)
     - Retrieving shellcode from HTTP requests using Rust.
