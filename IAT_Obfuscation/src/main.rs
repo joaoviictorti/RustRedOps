@@ -14,7 +14,7 @@ use windows::Win32::System::{
 
 fn main() {
     unsafe {
-        let address = get_module("ntdll.dll".to_string()).expect("Error obtaining module address");
+        let address = get_module("ntdll.dll").expect("Error obtaining module address");
         get_proc(address);
     };
 }
@@ -22,12 +22,14 @@ fn main() {
 unsafe fn get_proc(dll_base: *mut c_void) {
     let dos_header = dll_base as *mut IMAGE_DOS_HEADER;
     if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
-        panic!("INVALID DOS SIGNATURE");
+        eprintln!("INVALID DOS SIGNATURE");
+        return;
     }
 
     let nt_header = (dll_base as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
     if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-        panic!("INVALID NT SIGNATURE");
+        eprintln!("INVALID NT SIGNATURE");
+        return;
     }
 
     let export_directory = (dll_base as usize + (*nt_header).OptionalHeader.DataDirectory[0].VirtualAddress as usize) as *const IMAGE_EXPORT_DIRECTORY;
@@ -43,7 +45,7 @@ unsafe fn get_proc(dll_base: *mut c_void) {
     }
 }
 
-unsafe fn get_module(dll: String) -> Result<*mut c_void, ()> {
+unsafe fn get_module(dll: &str) -> Result<*mut c_void, ()> {
     let peb = get_peb();
     let ldr = (*peb).Ldr;
     let mut list_entry = (*ldr).InLoadOrderModuleList.Flink as *mut LDR_DATA_TABLE_ENTRY;
@@ -58,7 +60,7 @@ unsafe fn get_module(dll: String) -> Result<*mut c_void, ()> {
             .to_string()
             .to_lowercase();
 
-        if dll.to_lowercase() == dll_name {
+        if dll == dll_name {
             return Ok((*list_entry).DllBase);
         }
 
