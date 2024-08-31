@@ -1,12 +1,12 @@
 # RustRedOps
 
-</br>
-
 ![Rust](https://img.shields.io/badge/made%20with-Rust-red)
 ![Platform](https://img.shields.io/badge/platform-windows-blueviolet)
 ![Forks](https://img.shields.io/github/forks/joaoviictorti/RustRedOps)
 ![Stars](https://img.shields.io/github/stars/joaoviictorti/RustRedOps)
 ![License](https://img.shields.io/github/license/joaoviictorti/RustRedOps)
+
+</br>
 
 <p align="center">
     <img height="200" alt="RustRedOps" src="rust.png">
