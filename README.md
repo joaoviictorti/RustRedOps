@@ -1,13 +1,23 @@
 # RustRedOps
 
+</br>
+
+![Rust](https://img.shields.io/badge/made%20with-Rust-red)
+![Platform](https://img.shields.io/badge/platform-windows-blueviolet)
+![Forks](https://img.shields.io/github/forks/joaoviictorti/RustRedOps)
+![Stars](https://img.shields.io/github/stars/joaoviictorti/RustRedOps)
+![License](https://img.shields.io/github/license/joaoviictorti/RustRedOps)
+
 <p align="center">
     <img height="200" alt="RustRedOps" src="rust.png">
 </p>
 
+</br>
+
+RustRedOps is a repository that houses various tools and projects related to Red Team operations, developed in Rust. This repository is dedicated to providing effective and efficient tools for security professionals and penetration testers who want to perform security assessments and intrusion tests.
 
 ## Summary
 
-* [Overview](#overview)
 * [Contents](#contents)
 * [Resources](#resources)
 * [Requirements](#requirements)
@@ -18,10 +28,6 @@
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
 * [Credits / References / Thanks / Motivation](#credits--references--thanks--motivation)
-
-## Overview
-
-RustRedOps is a repository that houses various tools and projects related to Red Team operations, developed in Rust. This repository is dedicated to providing effective and efficient tools for security professionals and penetration testers who want to perform security assessments and intrusion tests.
 
 ## Contents
 
