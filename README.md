@@ -16,7 +16,7 @@
 
 RustRedOps is a repository that houses various tools and projects related to Red Team operations, developed in Rust. This repository is dedicated to providing effective and efficient tools for security professionals and penetration testers who want to perform security assessments and intrusion tests.
 
-## Summary
+## Table of Contents
 
 * [Contents](#contents)
 * [Resources](#resources)
