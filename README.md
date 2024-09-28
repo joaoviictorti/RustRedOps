@@ -28,6 +28,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
 * [Credits / References / Thanks / Motivation](#credits--references--thanks--motivation)
+* [License](#license)
 
 ## Contents
 
@@ -294,3 +295,7 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://discord.gg/rust-lang-community (Discord community that helped a lot)
 * https://github.com/CCob
 * https://github.com/anvie/litcrypt.rs
+
+## License
+
+This project is licensed under the [**MIT License**](/LICENSE)
