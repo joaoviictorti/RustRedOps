@@ -27,7 +27,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
     * [Compiling for a Specific Architecture](#compiling-for-a-specific-architecture)
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
-* [Credits / References / Thanks / Motivation](#credits--references--thanks--motivation)
+* [References](#references)
 * [License](#license)
 
 ## Contents
@@ -275,7 +275,7 @@ To contribute to **RustRedOps**, follow these steps:
 
 Alternatively, consult the [GitHub documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests) on how to create a pull request.
 
-## Credits / References / Thanks / Motivation
+## References
 I would like to express my sincere gratitude to the creators of remarkable projects and fascinating techniques, who provided me with the tools and inspiration needed to create this extraordinary repository.
 
 * https://github.com/MemN0ps
