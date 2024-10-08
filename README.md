@@ -20,6 +20,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
 
 * [Contents](#contents)
 * [Resources](#resources)
+* [Other Rust projects](#other-rust-projects)
 * [Requirements](#requirements)
 * [Compile](#compile)
     * [Compiling the Project](#compiling-the-project)
@@ -212,6 +213,11 @@ The repository is organized into several projects, each with its own purpose and
 
 - Each individual project can include a features section that details the project's main features and functionalities.
 - You can view the installation instructions, usage and examples for each project in their respective directories.
+
+## Other Rust projects
+
+- [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
+- [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
 
 ## Requirements
 
