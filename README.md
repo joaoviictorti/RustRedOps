@@ -209,15 +209,17 @@ The repository is organized into several projects, each with its own purpose and
 58. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
+## Other Rust projects
+
+Here are some other examples of projects I've done with Rust:
+
+- [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
+- [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
 - You can view the installation instructions, usage and examples for each project in their respective directories.
-
-## Other Rust projects
-
-- [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
-- [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
 
 ## Requirements
 
