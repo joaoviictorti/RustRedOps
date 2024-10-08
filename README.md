@@ -265,15 +265,15 @@ Follow these steps to start using the projects in this repository:
 
 
 ## Contributing to RustRedOps
-To contribute to RustRedOps, follow these steps:
+To contribute to **RustRedOps**, follow these steps:
 
 1. Fork this repository.
-2. Create a branch: ```git checkout -b <branch_name>```.
-3. Make your changes and confirm them: ```git commit -m '<commit_message>'```.
-4. Send to the original branch: ```git push origin <project_name> / <local>```.
-5. Create the pull request.
+2. Create a branch: `git checkout -b <branch_name>`.
+3. Make your changes and commit them: `git commit -m '<commit_message>'`.
+4. Push your changes to your branch: `git push origin <branch_name>`.
+5. Create a pull request.
 
-Alternatively, consult the GitHub documentation on how to create a pull request.
+Alternatively, consult the [GitHub documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests) on how to create a pull request.
 
 ## Credits / References / Thanks / Motivation
 I would like to express my sincere gratitude to the creators of remarkable projects and fascinating techniques, who provided me with the tools and inspiration needed to create this extraordinary repository.
