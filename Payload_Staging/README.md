@@ -10,14 +10,14 @@
 
 # Overview
 
-It's a technique that demonstrates how to retrieve a shellcode through requests using Rust.
+It is a technique that demonstrates how to obtain a shellcode via HTTP request and Registry key using Rust.
 
 # Usage
 
 You can run with cargo run or the compiled binary directly:
 ```sh
-cargo run
+cargo run --bin web
 ```
 ```sh
-target/release/request_shellcode.exe
+cargo run --bin registry
 ```
