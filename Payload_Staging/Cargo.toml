@@ -1,0 +1,16 @@
+[package]
+name = "Payload_Staging"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.11.24", features = ["blocking"] }
+windows = { version = "0.51.1", features = ["Win32_System_Registry", "Win32_Foundation"] }
+
+[[bin]]
+name = "web"
+path = "src/web.rs"
+
+[[bin]]
+name = "registry"
+path = "src/registry.rs"

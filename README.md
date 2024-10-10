@@ -167,46 +167,43 @@ The repository is organized into several projects, each with its own purpose and
 44. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
     - Running shellcode using Fibers.
 
-45. [**Process Ghosting**](/Process_Ghosting)
+45. [**Payload Staging**](/Payload_Staging)
+    - This project focuses on demonstrating how to perform shellcode retrieval using an HTTP request and a Registry key
+
+46. [**Process Ghosting**](/Process_Ghosting)
     - Loading a PE file using the Process Ghosting technique.
 
-46. [**Process Herpaderping**](/Process_Herpaderping)
+47. [**Process Herpaderping**](/Process_Herpaderping)
     - Obscuring the intentions of a process by modifying the contents of the disk after the image has been mapped.
 
-47. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
+48. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
     - It addresses the hijacking of threads in remote system processes to carry out malicious actions.
 
-48. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
+49. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
     - It exploits the substitution of functions in remote systems to carry out malicious activities.
 
-49. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
+50. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
     - Performing malicious code injection via memory mapping into remote processes.
-
-50. [**Registry Shellcode**](/Registry_Shellcode)
-    - Writing and reading shellcode to the Windows Registry.
 
 51. [**Remove CRT**](/Remove_CRT)
     - It focuses on minimizing the use of the CRT (C Runtime Library) during runtime and applying additional flags to strip away unnecessary information from the binary.
 
-52. [**Request Shellcode**](/Request_Shellcode)
-    - Retrieving shellcode from HTTP requests using Rust.
-
-53. [**Self Deletion**](/Self_Deletion)
+52. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
-54. [**String Hashing**](/String_Hashing)
+53. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-55. [**Syscalls**](/Syscalls)
+54. [**Syscalls**](/Syscalls)
     - Running direct and indirect syscall.
 
-56. [**Threadless Injection**](/Threadless_Injection)
+55. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
-57. [**WMI**](/WMI)
+56. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
-58. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+57. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
 ## Other Rust projects
