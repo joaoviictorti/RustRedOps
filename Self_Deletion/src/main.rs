@@ -35,8 +35,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             stream_wide.len(),
         );
 
-        let path = std::env::current_exe().unwrap();
-        let path_str = path.to_str().unwrap();
+        let path = std::env::current_exe()?;
+        let path_str = path.to_str().ok_or_else(|| "Error when converting to str")?;
         let full_path  = path_str.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
         
         let mut h_file = CreateFileW(
