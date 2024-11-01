@@ -212,6 +212,7 @@ Here are some other examples of projects I've done with Rust:
 
 - [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
 - [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
+- [Running .NET](https://github.com/joaoviictorti/rustclr)
 
 ## Resources
 
