@@ -6,6 +6,7 @@ version = 3
 name = "anti_debug"
 version = "0.1.0"
 dependencies = [
+ "ntapi",
  "sysinfo",
  "windows",
 ]
