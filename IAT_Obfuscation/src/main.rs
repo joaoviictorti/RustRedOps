@@ -1,9 +1,12 @@
+use std::{
+    ffi::CStr, 
+    slice::{self, from_raw_parts}
+};
 use ntapi::{
     ntldr::LDR_DATA_TABLE_ENTRY,
     ntpebteb::{PEB, TEB},
     winapi::ctypes::c_void,
 };
-use std::{ffi::CStr, slice};
 use windows::Win32::System::{
     Diagnostics::Debug::IMAGE_NT_HEADERS64,
     Kernel::NT_TIB,
@@ -15,11 +18,11 @@ use windows::Win32::System::{
 fn main() {
     unsafe {
         let address = get_module("ntdll.dll").expect("Error obtaining module address");
-        get_proc(address);
+        get_proc_address(address);
     };
 }
 
-unsafe fn get_proc(dll_base: *mut c_void) {
+unsafe fn get_proc_address(dll_base: *mut c_void) {
     let dos_header = dll_base as *mut IMAGE_DOS_HEADER;
     if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
         eprintln!("INVALID DOS SIGNATURE");
@@ -33,14 +36,14 @@ unsafe fn get_proc(dll_base: *mut c_void) {
     }
 
     let export_directory = (dll_base as usize + (*nt_header).OptionalHeader.DataDirectory[0].VirtualAddress as usize) as *const IMAGE_EXPORT_DIRECTORY;
-    let names = (dll_base as usize + (*export_directory).AddressOfNames as usize) as *const u32;
-    let ordinals = (dll_base as usize + (*export_directory).AddressOfNameOrdinals as usize) as *const u16;
-    let addresss = (dll_base as usize + (*export_directory).AddressOfFunctions as usize) as *const u32;
+    let names = from_raw_parts((dll_base as usize + (*export_directory).AddressOfNames as usize) as *const u32, (*export_directory).NumberOfNames as usize);
+    let functions = from_raw_parts((dll_base as usize + (*export_directory).AddressOfFunctions as usize) as *const u32, (*export_directory).NumberOfFunctions as usize);
+    let ordinals = from_raw_parts((dll_base as usize + (*export_directory).AddressOfNameOrdinals as usize) as *const u16, (*export_directory).NumberOfNames as usize);
 
-    for i in 0..(*export_directory).NumberOfNames as isize {
-        let name = CStr::from_ptr((dll_base as usize + *names.offset(i) as usize) as *const i8).to_str().unwrap();
-        let ordinal = *ordinals.offset(i);
-        let address = (dll_base as usize + *addresss.offset(ordinal as isize) as usize) as *mut c_void;
+    for i in 0..(*export_directory).NumberOfNames as usize {
+        let name = CStr::from_ptr((dll_base as usize + names[i] as usize) as *const i8).to_str().ok().unwrap_or("");
+        let ordinal = ordinals[i] as usize;
+        let address = (dll_base as usize + functions[ordinal] as usize) as *mut c_void;
         println!("NAME {} | ADDRESS: {:?} | ORDINAL: {}", name, address, ordinal);
     }
 }
@@ -55,11 +58,7 @@ unsafe fn get_module(dll: &str) -> Result<*mut c_void, ()> {
             (*list_entry).BaseDllName.Buffer,
             ((*list_entry).BaseDllName.Length / 2) as usize,
         );
-        let dll_name = String::from_utf16(&buffer)
-            .unwrap()
-            .to_string()
-            .to_lowercase();
-
+        let dll_name = String::from_utf16_lossy(&buffer).to_lowercase();
         if dll == dll_name {
             return Ok((*list_entry).DllBase);
         }
