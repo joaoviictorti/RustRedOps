@@ -3,35 +3,50 @@
 mod utils;
 mod cmd;
 
+use std::ffi::CStr;
+
 use {
     cmd::Args,
-    clap::Parser,
+    clap::Parser, 
     std::{ffi::c_void, mem::size_of, ptr::null_mut},
-    ntapi::ntmmapi::{NtMapViewOfSection, ViewShare},
-    windows::core::PCSTR,
-    windows::Wdk::Storage::FileSystem::NtCreateSection,
-    utils::{get_peb, image_ordinal, image_snap_by_ordinal, Dll, Exe, BASE_RELOCATION_ENTRY, PE},
-    windows::Win32::{
-        System::{
-            Memory::*,
-            SystemServices::*,
-            Diagnostics::Debug::*,
-            LibraryLoader::{LoadLibraryA, GetProcAddress},
-            WindowsProgramming::IMAGE_THUNK_DATA64,
-            Threading::RTL_USER_PROCESS_PARAMETERS
-        },
-        Storage::FileSystem::{FILE_ATTRIBUTE_NORMAL, FILE_SHARE_MODE, OPEN_EXISTING, CreateFileA},
-        Foundation::{FARPROC, GENERIC_READ, HANDLE, HINSTANCE, STATUS_SUCCESS},
-    },
+    utils::{
+        BASE_RELOCATION_ENTRY, PE, Dll, Exe,
+        get_peb, image_ordinal, image_snap_by_ordinal,
+    }, 
+};
+
+use {
+    ntapi::ntmmapi::{NtMapViewOfSection, ViewShare},  
+    windows::{
+        core::PCSTR, 
+        Wdk::Storage::FileSystem::NtCreateSection, 
+        Win32::{
+            Foundation::{
+                GetLastError, GENERIC_READ, HANDLE, 
+                HINSTANCE, STATUS_SUCCESS
+            }, 
+            Storage::FileSystem::{
+                CreateFileA, FILE_ATTRIBUTE_NORMAL, 
+                FILE_SHARE_MODE, OPEN_EXISTING
+            }, 
+            System::{
+                Memory::*, 
+                SystemServices::*,
+                Diagnostics::Debug::*,
+                Threading::RTL_USER_PROCESS_PARAMETERS, 
+                WindowsProgramming::IMAGE_THUNK_DATA64,
+                LibraryLoader::{GetProcAddress, LoadLibraryA}, 
+            }
+        }
+    }
 };
 
 fn main() -> Result<(), String> {
-    let args = Args::parse();
-
-    let buffer = std::fs::read(&args.file).map_err(|e| format!("[!] Error reading file: {}", e))?;
+    let arguments = Args::parse();
+    let buffer = std::fs::read(&arguments.file).map_err(|e| format!("[!] Error reading file: {}", e))?;
     let mut pe = initialize_pe(buffer)?;
-    let module_dll  = load_dll(args.dll)?;
-    load_exe(&mut pe, module_dll, args.args.as_deref().unwrap_or(""))?;
+    let module_dll  = load_dll(arguments.dll)?;
+    load_exe(&mut pe, module_dll, arguments.args.as_deref().unwrap_or(""))?;
 
     Ok(())
 }
@@ -48,22 +63,20 @@ fn main() -> Result<(), String> {
 ///
 /// A `Result` which is `Ok` if the executable is successfully loaded and `Err` if there is an error.
 fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), String>{
-    let address = unsafe {
-        VirtualAlloc(
+    unsafe {
+        let address = VirtualAlloc(
             None,
             (*pe.nt_header).OptionalHeader.SizeOfImage as usize,
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
-        )
-    };
+        );
+    
+        if address.is_null() {
+            return Err(format!("VirtualAlloc Failed With Error: {:?}", GetLastError()));
+        }
+    
+        let mut tmp_section = pe.section_header;
 
-    if address.is_null() {
-        return Err(String::from("VirtualAlloc Failed"));
-    }
-
-    let mut tmp_section = pe.section_header;
-
-    unsafe {
         for _ in 0..(*pe.nt_header).FileHeader.NumberOfSections {
             let dst = (*tmp_section).VirtualAddress as isize;
             let src_start = (*tmp_section).PointerToRawData as usize;
@@ -83,45 +96,37 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
 
             tmp_section = (tmp_section as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
         }
-    }
-
-    /// Adjusting the IAT header
-    fixing_iat(pe, address)?;
-
-    let mut old_protect = PAGE_PROTECTION_FLAGS(0);
-    unsafe { 
+    
+        // Adjusting the IAT header
+        fixing_iat(pe, address)?;
+    
+        let mut old_protect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
             module_dll, 
             (*pe.nt_header).OptionalHeader.SizeOfImage as usize, 
             PAGE_READWRITE, 
             &mut old_protect
         ).map_err(|e| format!("[!] VirtualProtect Failed With Status: {e}"))?; 
-    };
-
-    unsafe { std::ptr::copy_nonoverlapping(address, module_dll, (*pe.nt_header).OptionalHeader.SizeOfImage as usize) };
-
-
-    /// Adjusting relocations
-    realoc_data(pe, module_dll)?;
-
-    unsafe { 
+    
+       std::ptr::copy_nonoverlapping(address, module_dll, (*pe.nt_header).OptionalHeader.SizeOfImage as usize);
+    
+        // Adjusting relocations
+        realoc_data(pe, module_dll)?;
+    
         VirtualProtect(
             module_dll,  
             (*pe.nt_header).OptionalHeader.SizeOfHeaders as usize, 
             PAGE_READONLY, 
             &mut old_protect
-        ).map_err(|e| format!("[!] VirtualProtect (2) Failed With Status: {e}"))?; 
-    };
-
-    /// Adjusting the arguments (if any)
-    fixing_arguments(args);
-
-    /// Adjusting memory permissions
-    fixing_memory(pe, module_dll)?;
-
-    let entrypoint = unsafe { (module_dll as usize + (*pe.nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void };
+        ).map_err(|e| format!("[!] VirtualProtect [{}] Failed With Status: {e}", line!()))?; 
     
-    unsafe {
+        // Adjusting the arguments (if any)
+        fixing_arguments(args)?;
+    
+        // Adjusting memory permissions
+        fixing_memory(pe, module_dll)?;
+    
+        let entrypoint = (module_dll as usize + (*pe.nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void;
         if pe.is_dll {
             let func_dll =  std::mem::transmute::<_, Dll>(entrypoint);
             func_dll(HINSTANCE(address as isize), DLL_PROCESS_ATTACH, null_mut());
@@ -129,7 +134,7 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
             let func_exe =  std::mem::transmute::<_, Exe>(entrypoint);
             func_exe();
         }
-    };
+    }
 
     Ok(())
 }
@@ -158,11 +163,11 @@ fn initialize_pe(buffer: Vec<u8>) -> Result<PE, String> {
         let mut section_header = (nt_header as usize + size_of::<IMAGE_NT_HEADERS64>()) as *mut IMAGE_SECTION_HEADER;
         for i in 0..(*nt_header).FileHeader.NumberOfSections {
             let section = (*section_header.add(i.into())).Name;
-            let name = String::from_utf8(section.to_vec()).expect("Error reading section");
-            let name = name.trim_matches('\0');
-            if name == ".text" {
+            let name = String::from_utf8_lossy(&section);
+            if name.trim_matches('\0') == ".text" {
                 break;
             }
+
             section_header = (section_header as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
         }
 
@@ -200,11 +205,7 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             None,
-        );
-
-        if h_file.is_err() {
-            return Err(format!("CreateFileA Failed With Status: {:?}", h_file.err()))
-        }
+        ).map_err(|e| format!("CreateFileA Failed With Error: {e}"))?;
 
         let mut section = HANDLE::default();
         let status = NtCreateSection(
@@ -214,7 +215,7 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
             None,
             PAGE_READONLY.0,
             SEC_IMAGE.0,
-            h_file.unwrap(),
+            h_file,
         );
 
         if status != STATUS_SUCCESS {
@@ -237,7 +238,7 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
         );
 
         if status != 0 {
-            return Err(format!("NtMapViewOfSection Failed With Status {}", status));
+            return Err(format!("NtMapViewOfSection Failed With Status {status}"));
         }
 
         let dos_header = mapped_module as *mut IMAGE_DOS_HEADER;
@@ -262,8 +263,9 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
 /// A `Result` which is `Ok` if the relocations are successfully adjusted, or `Err` if there is an error.
 fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
-        let mut base_relocation = address.offset(pe.entry_basereloc_data.VirtualAddress as isize) as *mut IMAGE_BASE_RELOCATION;
         let offset = address.wrapping_sub((*pe.nt_header).OptionalHeader.ImageBase as usize);
+        let mut base_relocation = address.offset(pe.entry_basereloc_data.VirtualAddress as isize) as *mut IMAGE_BASE_RELOCATION;
+
         while (*base_relocation).VirtualAddress != 0 {
             let mut base_entry = base_relocation.offset(1) as *mut BASE_RELOCATION_ENTRY;
             let block_end = (base_relocation as *mut u8).offset((*base_relocation).SizeOfBlock as isize) as *mut BASE_RELOCATION_ENTRY;
@@ -272,34 +274,18 @@ fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
                 let entry = *base_entry;
                 let entry_type = entry.type_();
                 let entry_offset = entry.offset() as u32;
-                let target_address = address.wrapping_add(((*base_relocation).VirtualAddress + entry_offset) as usize);
+                let target_address = address.add(((*base_relocation).VirtualAddress + entry_offset) as usize);
 
                 match entry_type as u32 {
-                    IMAGE_REL_BASED_DIR64 => {
-                        let patch_address = target_address as *mut isize;
-                        *patch_address += offset as isize;
-                    }
-                    IMAGE_REL_BASED_HIGHLOW => {
-                        let patch_address = target_address as *mut u32;
-                        *patch_address = patch_address.read().wrapping_add(offset as u32);
-                    }
-                    IMAGE_REL_BASED_HIGH => {
-                        let patch_address = target_address as *mut u16;
-                        let high = (*patch_address as u32).wrapping_add((offset as u32 >> 16) & 0xFFFF);
-                        *patch_address = high as u16
-                    }
-                    IMAGE_REL_BASED_LOW => {
-                        let patch_address = target_address as *mut u16;
-                        let low = (*patch_address as u32).wrapping_add(offset as u32 & 0xFFFF);
-                        *patch_address = low as u16;
-                    }
-                    IMAGE_REL_BASED_ABSOLUTE => {}
-                    _ => {
-                        return Err(String::from("Unknown relocation type"));
-                    }
+                    IMAGE_REL_BASED_DIR64 => *(target_address as *mut isize) += offset as isize,
+                    IMAGE_REL_BASED_HIGHLOW => *(target_address as *mut u32) = (*(target_address as *mut u32)).wrapping_add(offset as u32),
+                    IMAGE_REL_BASED_HIGH => *(target_address as *mut u16) = (*(target_address as *mut u16) as u32).wrapping_add((offset as u32 >> 16) & 0xFFFF) as u16,
+                    IMAGE_REL_BASED_LOW => *(target_address as *mut u16) = (*(target_address as *mut u16) as u32).wrapping_add(offset as u32 & 0xFFFF) as u16,
+                    IMAGE_REL_BASED_ABSOLUTE => {}, // No relocation needed
+                    _ => return Err(format!("Unknown relocation type: {}", entry_type))
                 }
 
-                base_entry = base_entry.offset(1);
+                base_entry = base_entry.add(1);
             }
 
             base_relocation = base_entry as *mut IMAGE_BASE_RELOCATION;
@@ -334,7 +320,8 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
 
             let dll_name = address.offset((*img_import_descriptor).Name as isize) as *const i8;
             let mut thunk_size = 0;
-            let h_module = LoadLibraryA(PCSTR(dll_name as _)).map_err(|e| format!("LoadLibrary Failed With Status: {e}"));
+            let h_module = LoadLibraryA(PCSTR(dll_name as _))
+                .map_err(|e| format!("LoadLibrary Failed With Status: {e}"))?;
 
             loop {
                 let original_first_chunk = address.offset(original_first_chunk_rva as isize + thunk_size) as *mut IMAGE_THUNK_DATA64;
@@ -343,26 +330,29 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
                     break;
                 }
 
-                let mut func_address: FARPROC = Default::default();
-                let mut name: *const i8 = null_mut();
-
-                if image_snap_by_ordinal((*original_first_chunk).u1.Ordinal) {
+                let func_address = if image_snap_by_ordinal((*original_first_chunk).u1.Ordinal) {
+                    // Resolve function by ordinal
                     let ordinal = image_ordinal((*original_first_chunk).u1.Ordinal);
-                    func_address = GetProcAddress(h_module, PCSTR(ordinal as *const u8));
+                    GetProcAddress(h_module, PCSTR(ordinal as *const u8))
                 } else {
-                    let image_import_name = address.offset((*original_first_chunk).u1.AddressOfData as isize) as *mut IMAGE_IMPORT_BY_NAME;
-                    name = &(*image_import_name).Name as *const i8;
-                    func_address = GetProcAddress(h_module, PCSTR(name as *const u8));
-                }
+                    // Resolve function by name
+                    let import_by_name = address.add((*original_first_chunk).u1.AddressOfData as usize) as *mut IMAGE_IMPORT_BY_NAME;
+                    let func_name = &(*import_by_name).Name as *const i8;
+                    GetProcAddress(h_module, PCSTR(func_name as *const u8))
+                };
 
                 match func_address {
-                    Some(f) => {
-                        (*first_thunk).u1.Function =  f as *const () as u64;
-                    },
+                    Some(addr) => (*first_thunk).u1.Function = addr as *const () as u64,
                     None => {
-                        return Err(format!("The expected function was not found: {:?}", name));
+                        let func_name = if image_snap_by_ordinal((*original_first_chunk).u1.Ordinal) {
+                            format!("{}", image_ordinal((*original_first_chunk).u1.Ordinal))
+                        } else {
+                            let import_by_name = address.add((*original_first_chunk).u1.AddressOfData as usize) as *mut IMAGE_IMPORT_BY_NAME;
+                            format!("{:?}", CStr::from_ptr(&(*import_by_name).Name as *const i8))
+                        };
+                        return Err(format!("Failed to find function: {}", func_name));
                     }
-                }
+                };
 
                 thunk_size += size_of::<IMAGE_THUNK_DATA64>() as isize;
             }
@@ -384,45 +374,30 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
 /// A `Result` which is `Ok` if the memory protections are successfully set, or `Err` if there is an error.
 fn fixing_memory(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
-        for _ in 0..(*pe.nt_header).FileHeader.NumberOfSections {
-            let mut protection = PAGE_PROTECTION_FLAGS(0);
-            let image_section_characteristics = IMAGE_SECTION_CHARACTERISTICS(0);
-            if (*pe.section_header).SizeOfRawData == 0 || (*pe.section_header).VirtualAddress == 0 {
+        let num_sections = (*pe.nt_header).FileHeader.NumberOfSections;
+        let mut section_header = pe.section_header;
+
+        for _ in 0..num_sections {
+            if (*section_header).SizeOfRawData == 0 || (*section_header).VirtualAddress == 0 {
+                section_header = section_header.add(1);
                 continue;
             }
 
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_WRITE != image_section_characteristics {
-                protection = PAGE_WRITECOPY
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_READ != image_section_characteristics {
-                protection = PAGE_READONLY
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_WRITE != image_section_characteristics
-                && (*pe.section_header).Characteristics & IMAGE_SCN_MEM_READ != image_section_characteristics {
-                protection = PAGE_READWRITE
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != image_section_characteristics {
-                protection = PAGE_EXECUTE
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != image_section_characteristics
-                && (*pe.section_header).Characteristics & IMAGE_SCN_MEM_WRITE != image_section_characteristics {
-                protection = PAGE_EXECUTE_WRITECOPY
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != image_section_characteristics
-                && (*pe.section_header).Characteristics & IMAGE_SCN_MEM_READ != image_section_characteristics {
-                    protection = PAGE_EXECUTE_READ
-            }
-
-            if (*pe.section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != image_section_characteristics
-                && (*pe.section_header).Characteristics & IMAGE_SCN_MEM_WRITE != image_section_characteristics
-                && (*pe.section_header).Characteristics & IMAGE_SCN_MEM_READ != image_section_characteristics {
-                    protection = PAGE_EXECUTE_READWRITE;
-            }
+            let characteristics = (*pe.section_header).Characteristics;
+            let protection = match (
+                characteristics & IMAGE_SCN_MEM_EXECUTE != IMAGE_SECTION_CHARACTERISTICS(0),
+                characteristics & IMAGE_SCN_MEM_READ != IMAGE_SECTION_CHARACTERISTICS(0),
+                characteristics & IMAGE_SCN_MEM_WRITE != IMAGE_SECTION_CHARACTERISTICS(0),
+            ) {
+                (true, true, true) => PAGE_EXECUTE_READWRITE,
+                (true, true, false) => PAGE_EXECUTE_READ,
+                (true, false, true) => PAGE_EXECUTE_WRITECOPY,
+                (true, false, false) => PAGE_EXECUTE,
+                (false, true, true) => PAGE_READWRITE,
+                (false, true, false) => PAGE_READONLY,
+                (false, false, true) => PAGE_WRITECOPY,
+                _ => PAGE_NOACCESS,
+            };
 
             let mut old_protect = PAGE_PROTECTION_FLAGS(0);
             VirtualProtect(
@@ -430,9 +405,9 @@ fn fixing_memory(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
                 (*pe.section_header).SizeOfRawData as usize,
                 protection,
                 &mut old_protect,
-            ).map_err(|e| format!("VirtualProtect (3) Failed With Status: {e}"))?;
+            ).map_err(|e| format!("VirtualProtect [{}] Failed With Status: {e}", line!()))?;
 
-            pe.section_header = (pe.section_header as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
+            section_header = section_header.add(1);
         }
     }
 
@@ -444,19 +419,21 @@ fn fixing_memory(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
 /// # Arguments
 ///
 /// * `args` - The command line arguments to be passed to the executable.
-fn fixing_arguments(args: &str) {
-    let peb = unsafe { get_peb() };
-    let process_parameters = unsafe { (*peb).ProcessParameters as *mut RTL_USER_PROCESS_PARAMETERS };
+fn fixing_arguments(args: &str) -> Result<(), String>  {
     unsafe {
+        let peb = get_peb();
+        let process_parameters = (*peb).ProcessParameters as *mut RTL_USER_PROCESS_PARAMETERS;
         std::ptr::write_bytes((*process_parameters).CommandLine.Buffer.0, 0, (*process_parameters).CommandLine.Length as usize);
 
-        let current_exe = std::env::current_exe().unwrap();
-        let path_name: Vec<u16> = format!("\"{}\" {}\0", current_exe.to_string_lossy(), args)
+        let current_exe = std::env::current_exe().map_err(|e| format!("Failed to get current exe path: {}", e))?;
+        let path_name= format!("\"{}\" {}\0", current_exe.to_string_lossy(), args)
             .encode_utf16()
-            .collect();
+            .collect::<Vec<u16>>();
 
         std::ptr::copy_nonoverlapping(path_name.as_ptr(), (*process_parameters).CommandLine.Buffer.0, path_name.len());
         (*process_parameters).CommandLine.Length = (path_name.len() * 2) as u16;
         (*process_parameters).CommandLine.MaximumLength = (path_name.len() * 2) as u16;
     }
+
+    Ok(())
 }

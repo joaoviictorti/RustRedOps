@@ -3,7 +3,13 @@
 
 use std::ffi::c_void;
 use ntapi::ntpebteb::{PEB, TEB};
-use windows::Win32::{Foundation::{BOOL, HINSTANCE}, System::{Diagnostics::Debug::*, Kernel::NT_TIB}};
+use windows::Win32::{
+    Foundation::{BOOL, HINSTANCE}, 
+    System::{
+        Kernel::NT_TIB,
+        Diagnostics::Debug::*, 
+    }
+};
 
 const IMAGE_ORDINAL_FLAG64: u64 = 0x8000000000000000;
 pub type Exe = unsafe extern "system" fn() -> BOOL;
