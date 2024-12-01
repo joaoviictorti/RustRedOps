@@ -1,11 +1,7 @@
-cargo-features = ["profile-rustflags"]
-
 [package]
 name = "no_crt"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [profile.dev]
 panic = "abort"
@@ -13,7 +9,6 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 strip = "debuginfo"
-rustflags = ["-C", "target-feature=+crt-static"]
 
 [dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_System_Memory"] }

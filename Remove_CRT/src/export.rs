@@ -1,4 +1,5 @@
-// It may be that at some point, as the code grows and you work with other APIs, this part of the code becomes necessary. Only use it when the compiler actually reports an error.
+//! It may be that at some point, as the code grows and you work with other APIs, 
+//! this part of the code becomes necessary. Only use it when the compiler actually reports an error.
 
 #[no_mangle]
 pub extern "C" fn memset(s: *mut u8, c: i32, n: usize) -> *mut u8 {
