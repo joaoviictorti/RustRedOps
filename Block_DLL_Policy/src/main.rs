@@ -21,6 +21,7 @@ fn main() {
     // current_process_block_dll();
 }
 
+#[allow(dead_code)]
 fn current_process_block_dll() {
     unsafe {
         let mut policy = PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY {

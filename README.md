@@ -104,14 +104,32 @@ The repository is organized into several projects, each with its own purpose and
 23. [**Local Payload Execution**](/Local_Payload_Execution)
     - This project addresses the direct execution of malicious payloads in a system's local environment.
 
-24. [**Local Mapping Injection**](/Local_Mapping_Injection)
-    - Performing malicious code injection via memory mapping into local processes.
+24. [**Mapping Injection**](/Mapping_Injection)
+    * [**Local**](/Mapping_Injection/Local)
+      
+      Performing malicious code injection via memory mapping into local processes.
 
-25. [**Local Function Stomping Injection**](/Local_Function_Stomping_Injection)
-    - It focuses on replacing locally running functions with malicious code, changing their default behavior.
+    * [**Remote**](/Mapping_Injection/Remote)
+    
+      Performing malicious code injection via memory mapping into remote processes.
 
-26. [**Local Thread Hijacking**](/Local_Thread_Hijacking)
-    - This project deals with hijacking the threads of processes running on the local system to execute malicious code.
+25. [**Function Stomping Injection**](/Function_Stomping_Injection)
+    * [**Local**](/Function_Stomping_Injection/Local)
+      
+      It focuses on replacing locally running functions with malicious code, changing their default behavior.
+
+    * [**Remote**](/Function_Stomping_Injection/Remote)
+
+      It exploits the substitution of functions in remote systems to carry out malicious activities.
+
+26. [**Thread Hijacking**](/Thread_Hijacking)
+    * [**Local**](/Thread_Hijacking/Local)
+    
+      This project deals with hijacking the threads of processes running on the local system to execute malicious code.
+    
+    * [**Remote**](/Thread_Hijacking/Remote)
+    
+      It addresses the hijacking of threads in remote system processes to carry out malicious actions. 
 
 27. [**Local PE Injection**](/Local_PE_Injection)
     - Running a PE file in memory.
@@ -176,34 +194,25 @@ The repository is organized into several projects, each with its own purpose and
 47. [**Process Herpaderping**](/Process_Herpaderping)
     - Obscuring the intentions of a process by modifying the contents of the disk after the image has been mapped.
 
-48. [**Remote Thread Hijacking**](/Remote_Thread_Hijacking)
-    - It addresses the hijacking of threads in remote system processes to carry out malicious actions.
-
-49. [**Remote Function Stomping Injection**](/Remote_Function_Stomping_Injection)
-    - It exploits the substitution of functions in remote systems to carry out malicious activities.
-
-50. [**Remote Mapping Injection**](/Remote_Mapping_Injection/)
-    - Performing malicious code injection via memory mapping into remote processes.
-
-51. [**Remove CRT**](/Remove_CRT)
+48. [**Remove CRT**](/Remove_CRT)
     - It focuses on minimizing the use of the CRT (C Runtime Library) during runtime and applying additional flags to strip away unnecessary information from the binary.
 
-52. [**Self Deletion**](/Self_Deletion)
+49. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
-53. [**String Hashing**](/String_Hashing)
+50. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-54. [**Syscalls**](/Syscalls)
+51. [**Syscalls**](/Syscalls)
     - Running direct and indirect syscall.
 
-55. [**Threadless Injection**](/Threadless_Injection)
+52. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
-56. [**WMI**](/WMI)
+53. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
-57. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+54. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
 ## Other Rust projects
@@ -213,6 +222,7 @@ Here are some other examples of projects I've done with Rust:
 - [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
 - [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
 - [Running .NET](https://github.com/joaoviictorti/rustclr)
+- [Parser Minidump](https://github.com/joaoviictorti/userdmp)
 
 ## Resources
 

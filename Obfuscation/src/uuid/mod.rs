@@ -1,5 +1,6 @@
 use uuid::Uuid;
 
+#[allow(dead_code)]
 pub fn deobfuscate_uuid(list_uuid: Vec<&str>) -> Result<Vec<u8>, ()> {
     let mut desofuscated_bytes = Vec::new();
 

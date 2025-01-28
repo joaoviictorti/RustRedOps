@@ -1,5 +1,3 @@
-// #![allow(unused_must_use)]
-
 use sysinfo::System;
 use windows::core::{s, Error, PSTR};
 use windows::Win32::System::{

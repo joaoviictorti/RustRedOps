@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub fn deobfuscate_mac(mac_addresses: Vec<&str>) -> Result<Vec<u8>, ()> {
     let original_ints: Vec<u8> = mac_addresses
         .iter()

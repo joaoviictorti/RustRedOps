@@ -8,7 +8,9 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
-strip = "debuginfo"
+strip = true 
+lto = true
+codegen-units = 1
+opt-level = "z"
 
 [dependencies]
-windows-sys = { version = "0.59.0", features = ["Win32_System_Memory"] }

@@ -8,6 +8,9 @@ rustflags = [
     "-C", "link-arg=/SUBSYSTEM:CONSOLE",
     "-C", "link-arg=/NODEFAULTLIB",
     "-C", "link-arg=/ENTRY:main",
+    "-C", "link-arg=kernel32.lib",
+    "-Z", "fmt-debug=none",
+    "-Z", "location-detail=none"
 ]
 
 [unstable]

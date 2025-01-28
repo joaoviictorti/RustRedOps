@@ -3,10 +3,16 @@
 
 mod export;
 
-use core::{arch::asm, mem::transmute, ptr::null_mut};
-use windows_sys::Win32::System::Memory::{
-    VirtualAlloc, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE
-};
+use core::{arch::asm, ffi::c_void, mem::transmute, ptr::null_mut};
+
+extern "system" {
+    fn VirtualAlloc(
+        lpaddress: *const c_void,
+        dwsize: usize,
+        flallocationtype: u32,
+        flprotect: u32,
+    ) -> *mut c_void;
+}
 
 #[no_mangle]
 fn main() -> u8 {
@@ -49,8 +55,8 @@ fn main() -> u8 {
         let address = VirtualAlloc(
             null_mut(),
             buf.len(),
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_EXECUTE_READWRITE,
+            0x3000,
+            0x40,
         );
 
         asm!(

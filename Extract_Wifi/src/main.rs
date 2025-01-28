@@ -15,13 +15,13 @@ fn main() {
     unsafe {
         let mut negotiate_version = 0;
         let mut wlan_handle = HANDLE::default();
-        let mut result = 0;
-        result = WlanOpenHandle(
+        let mut result = WlanOpenHandle(
             WLAN_API_VERSION_2_0,
             None,
             &mut negotiate_version,
             &mut wlan_handle,
         );
+        
 
         if result != ERROR_SUCCESS.0 {
             panic!("WlanOpenHandle Failed With Error: {}", result);
@@ -29,7 +29,6 @@ fn main() {
 
         let mut interface = null_mut();
         result = WlanEnumInterfaces(wlan_handle, None, &mut interface);
-
         if result != ERROR_SUCCESS.0 {
             WlanCloseHandle(wlan_handle, None);
             panic!("WlanEnumInterfaces Failed With Error: {}", result);
@@ -40,11 +39,11 @@ fn main() {
             (*interface).dwNumberOfItems as usize,
         );
 
-        for interface in interfaces_list {
+        for wlan_interface in interfaces_list {
             let mut wlan_profiles_ptr = null_mut();
             result = WlanGetProfileList(
                 wlan_handle,
-                &interface.InterfaceGuid,
+                &wlan_interface.InterfaceGuid,
                 None,
                 &mut wlan_profiles_ptr,
             );
@@ -60,15 +59,16 @@ fn main() {
             );
 
             for profile in wlan_profile_list {
-                let profile_info = String::from_utf16_lossy(&profile.strProfileName)
+                let profile_name = String::from_utf16_lossy(&profile.strProfileName)
                     .trim_matches('\0')
                     .to_string();
+
                 let mut xml_data = PWSTR::null();
                 let mut flag = WLAN_PROFILE_GET_PLAINTEXT_KEY;
                 result = WlanGetProfile(
                     wlan_handle,
-                    &interface.InterfaceGuid,
-                    PCWSTR(HSTRING::from(profile_info.clone()).as_ptr()),
+                    &wlan_interface.InterfaceGuid,
+                    PCWSTR(HSTRING::from(&profile_name).as_ptr()),
                     None,
                     &mut xml_data,
                     Some(&mut flag),
@@ -80,40 +80,54 @@ fn main() {
                     panic!("WlanGetProfile Failed With Error: {}", result);
                 }
 
-                let mut len = 0;
-                while *xml_data.0.offset(len) != 0 {
-                    len += 1;
-                }
-                let xml_slice = std::slice::from_raw_parts(xml_data.0, len as usize);
-                let xml = String::from_utf16_lossy(xml_slice);
-                let mut reader = Reader::from_str(&xml);
-                reader.trim_text(true);
-                let mut in_shared_key = false;
-                let mut key_material = String::new();
-
-                loop {
-                    match reader.read_event() {
-                        Ok(Event::Start(ref e)) => {
-                            if e.name() == quick_xml::name::QName(b"keyMaterial") {
-                                in_shared_key = true;
-                            }
-                        }
-                        Ok(Event::Text(ref e)) if in_shared_key => {
-                            key_material = e.escape_ascii().to_string();
-                            in_shared_key = false;
-                        }
-                        Ok(Event::Eof) => break,
-                        Err(e) => panic!("Error parsing the XML: {:?}", e),
-                        _ => (),
-                    }
-                }
+                let xml = pwstr_to_string(xml_data);
+                let key_material = extract_key_material(&xml);
 
                 if !key_material.is_empty() {
-                    println!("WIFI: {} | PASSWORD: {}", profile_info, key_material);
+                    println!("WIFI: {} | PASSWORD: {}", profile_name, key_material);
                 } else {
-                    println!("WIFI {} | PASSWORD NOT FOUND.", profile_info);
+                    println!("WIFI: {} | PASSWORD NOT FOUND.", profile_name);
                 }
             }
         }
     }
+}
+
+/// Converts a `PWSTR` (UTF-16 string pointer) to a `String`.
+fn pwstr_to_string(pwstr: PWSTR) -> String {
+    unsafe {
+        let mut len = 0;
+        while *pwstr.0.offset(len) != 0 {
+            len += 1;
+        }
+
+        let utf16_slice = std::slice::from_raw_parts(pwstr.0, len as usize);
+        String::from_utf16_lossy(utf16_slice)
+    }
+}
+
+/// Extracts the value of `keyMaterial` from an XML.
+fn extract_key_material(xml: &str) -> String {
+    let mut reader = Reader::from_str(xml);
+    reader.trim_text(true);
+
+    let mut in_key_material = false;
+    let mut key_material = String::new();
+
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(ref e)) if e.name() == quick_xml::name::QName(b"keyMaterial") => {
+                in_key_material = true;
+            }
+            Ok(Event::Text(ref e)) if in_key_material => {
+                key_material = e.escape_ascii().to_string();
+                in_key_material = false;
+            }
+            Ok(Event::Eof) => break,
+            Err(e) => panic!("Erro ao processar o XML: {:?}", e),
+            _ => (),
+        }
+    }
+
+    key_material
 }

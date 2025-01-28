@@ -1,5 +1,6 @@
 use std::net::Ipv4Addr;
 
+#[allow(dead_code)]
 pub fn deobfuscate_ipv4(list_ips: Vec<&str>) -> Result<Vec<u8>, ()> {
     let mut deobfuscated_ips: Vec<u8> = Vec::with_capacity(list_ips.len() * 4);
 

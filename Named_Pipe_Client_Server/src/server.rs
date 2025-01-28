@@ -6,7 +6,7 @@ use windows::Win32::System::Pipes::{
     PIPE_UNLIMITED_INSTANCES, PIPE_WAIT,
 };
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let h_pipe = CreateNamedPipeA(
             s!("\\\\.\\pipe\\Teste"),
@@ -17,22 +17,20 @@ fn main() {
             2044,
             0,
             None,
-        )
-        .unwrap_or_else(|e| {
-            panic!("[!] CreateNamedPipeA Failed With Error: {e}");
-        });
+        )?;
 
         let mut number_return = 0;
 
         println!("[+] Waiting For Data");
-        ConnectNamedPipe(h_pipe, None).unwrap_or_else(|e| panic!("[!] ConnectNamedPipe Failed With Error: {e}"));
+        ConnectNamedPipe(h_pipe, None)?;
 
         let mut buffer = [0u8; 276];
-
-        ReadFile(h_pipe, Some(&mut buffer), Some(&mut number_return), None).unwrap_or_else(|e| panic!("[!] ConnectNamedPipe Failed With Error: {e}"));
+        ReadFile(h_pipe, Some(&mut buffer), Some(&mut number_return), None)?;
 
         println!("{:?}", buffer);
 
-        CloseHandle(h_pipe);
+        CloseHandle(h_pipe)?;
     }
+
+    Ok(())
 }

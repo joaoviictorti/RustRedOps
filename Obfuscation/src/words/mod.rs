@@ -1,5 +1,6 @@
 // Creator: https://github.com/fdx-xdf
 
+#[allow(dead_code)]
 pub fn deobfuscate_words(words: Vec<&str>, dataset: Vec<&str>) -> Vec<u8> {
     let mut shellcode: Vec<u8> = vec![0; words.len()];
     for sc_index in 0..shellcode.len() {
