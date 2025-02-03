@@ -219,10 +219,14 @@ The repository is organized into several projects, each with its own purpose and
 
 Here are some other examples of projects I've done with Rust:
 
-- [Windows Kernel Rootkit](https://github.com/joaoviictorti/shadow-rs)
-- [COFF Loader](https://github.com/joaoviictorti/coffeeldr)
-- [Running .NET](https://github.com/joaoviictorti/rustclr)
-- [Parser Minidump](https://github.com/joaoviictorti/userdmp)
+- [shadow-rs](https://github.com/joaoviictorti/shadow-rs)
+    - Windows Kernel Rootkit.
+- [coffeeldr](https://github.com/joaoviictorti/coffeeldr)
+    - COFF Loader.
+- [rustclr](https://github.com/joaoviictorti/rustclr)
+    - Host CLR and run .NET binaries.
+- [userdmp](https://github.com/joaoviictorti/userdmp)
+    - A Rust crate to parse user-mode minidump files generated on Windows.
 
 ## Resources
 
