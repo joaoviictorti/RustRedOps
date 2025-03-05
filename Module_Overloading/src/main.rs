@@ -3,48 +3,52 @@
 mod utils;
 mod cmd;
 
-use std::ffi::CStr;
-
+use std::{
+    ffi::{c_void, CStr}, 
+    mem::size_of, 
+    ptr::null_mut
+};
 use {
     cmd::Args,
     clap::Parser, 
-    std::{ffi::c_void, mem::size_of, ptr::null_mut},
     utils::{
-        BASE_RELOCATION_ENTRY, PE, Dll, Exe,
-        get_peb, image_ordinal, image_snap_by_ordinal,
+        PE, Dll, Exe,
+        BASE_RELOCATION_ENTRY,
+        get_peb, image_ordinal, 
+        image_snap_by_ordinal,
     }, 
 };
 
-use {
-    ntapi::ntmmapi::{NtMapViewOfSection, ViewShare},  
-    windows::{
-        core::PCSTR, 
-        Wdk::Storage::FileSystem::NtCreateSection, 
-        Win32::{
-            Foundation::{
-                GetLastError, GENERIC_READ, HANDLE, 
-                HINSTANCE, STATUS_SUCCESS
-            }, 
-            Storage::FileSystem::{
-                CreateFileA, FILE_ATTRIBUTE_NORMAL, 
-                FILE_SHARE_MODE, OPEN_EXISTING
-            }, 
-            System::{
-                Memory::*, 
-                SystemServices::*,
-                Diagnostics::Debug::*,
-                Threading::RTL_USER_PROCESS_PARAMETERS, 
-                WindowsProgramming::IMAGE_THUNK_DATA64,
-                LibraryLoader::{GetProcAddress, LoadLibraryA}, 
-            }
+use ntapi::ntmmapi::{NtMapViewOfSection, ViewShare};
+use windows::{
+    core::PCSTR, 
+    Wdk::Storage::FileSystem::NtCreateSection, 
+    Win32::{
+        Foundation::{
+            GetLastError, GENERIC_READ, HANDLE, 
+            HINSTANCE, STATUS_SUCCESS
+        }, 
+        Storage::FileSystem::{
+            CreateFileA, FILE_ATTRIBUTE_NORMAL, 
+            FILE_SHARE_MODE, OPEN_EXISTING
+        }, 
+        System::{
+            Memory::*, 
+            SystemServices::*,
+            Diagnostics::Debug::*,
+            Threading::RTL_USER_PROCESS_PARAMETERS, 
+            WindowsProgramming::IMAGE_THUNK_DATA64,
+            LibraryLoader::{GetProcAddress, LoadLibraryA}, 
         }
     }
 };
 
 fn main() -> Result<(), String> {
     let arguments = Args::parse();
-    let buffer = std::fs::read(&arguments.file).map_err(|e| format!("[!] Error reading file: {}", e))?;
-    let mut pe = initialize_pe(buffer)?;
+    let buffer = std::fs::read(&arguments.file)
+        .map_err(|e| format!("[!] Error reading file: {}", e))?;
+    
+    let mut pe = init_pe(buffer)?;
     let module_dll  = load_dll(arguments.dll)?;
     load_exe(&mut pe, module_dll, arguments.args.as_deref().unwrap_or(""))?;
 
@@ -76,17 +80,16 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
         }
     
         let mut tmp_section = pe.section_header;
-
         for _ in 0..(*pe.nt_header).FileHeader.NumberOfSections {
             let dst = (*tmp_section).VirtualAddress as isize;
-            let src_start = (*tmp_section).PointerToRawData as usize;
-            let src_end = src_start + (*tmp_section).SizeOfRawData as usize;
+            let start = (*tmp_section).PointerToRawData as usize;
+            let end = start + (*tmp_section).SizeOfRawData as usize;
         
-            if src_end <= pe.file_buffer.len() {
-                let src = &pe.file_buffer[src_start..src_end];
+            if end <= pe.file_buffer.len() {
+                let src = &pe.file_buffer[start..end];
                 std::ptr::copy_nonoverlapping(
                     src.as_ptr(),
-                    address.offset(dst) as _,
+                    address.offset(dst).cast(),
                     src.len(),
                 );
 
@@ -94,11 +97,8 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
                 return Err(String::from("Section outside the buffer limits"));
             }
 
-            tmp_section = (tmp_section as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
+            tmp_section = tmp_section.add(1);
         }
-    
-        // Adjusting the IAT header
-        fixing_iat(pe, address)?;
     
         let mut old_protect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
@@ -110,6 +110,9 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
     
        std::ptr::copy_nonoverlapping(address, module_dll, (*pe.nt_header).OptionalHeader.SizeOfImage as usize);
     
+        // Adjusting the IAT header
+        fixing_iat(pe, module_dll)?;
+
         // Adjusting relocations
         realoc_data(pe, module_dll)?;
     
@@ -147,8 +150,8 @@ fn load_exe(pe: &mut PE, module_dll: *mut c_void, args: &str) -> Result<(), Stri
 ///
 /// # Returns
 ///
-/// A `Result` containing a `PE` struct if the initialization is successful, or a `String` error message if it fails.
-fn initialize_pe(buffer: Vec<u8>) -> Result<PE, String> {
+/// * A `Result` containing a `PE` struct if the initialization is successful, or a `String` error message if it fails.
+fn init_pe(buffer: Vec<u8>) -> Result<PE, String> {
     unsafe {
         let dos_header = buffer.as_ptr() as *mut IMAGE_DOS_HEADER;
         if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
@@ -168,7 +171,7 @@ fn initialize_pe(buffer: Vec<u8>) -> Result<PE, String> {
                 break;
             }
 
-            section_header = (section_header as usize + size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
+            section_header = section_header.add(1);
         }
 
         let pe = PE {
@@ -198,7 +201,7 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
     unsafe {
         let dll = std::ffi::CString::new(dll).unwrap().into_raw();
         let h_file = CreateFileA(
-            PCSTR(dll as _),
+            PCSTR(dll.cast()),
             GENERIC_READ.0,
             FILE_SHARE_MODE(0),
             None,
@@ -222,11 +225,11 @@ fn load_dll(dll: String) -> Result<*mut c_void, String> {
             return Err(format!("NtCreateSection Failed With Status: {:?}", status))
         }
 
-        let mut mapped_module: *mut ntapi::winapi::ctypes::c_void = null_mut();
+        let mut mapped_module = null_mut();
         let mut view_size = 0;
         let status = NtMapViewOfSection(
             section.0 as _,
-            0xffffffffffffffffu64 as _,
+            -1isize as *mut ntapi::winapi::ctypes::c_void ,
             &mut mapped_module,
             0,
             0,
@@ -304,11 +307,12 @@ fn realoc_data(pe: &mut PE, address: *mut c_void) -> Result<(), String> {
 ///
 /// # Returns
 ///
-/// A `Result` which is `Ok` if the IAT is successfully fixed, or `Err` if there is an error.
+/// * A `Result` which is `Ok` if the IAT is successfully fixed, or `Err` if there is an error.
 fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
     unsafe {
         let entries = (pe.entry_import_data.Size as usize / size_of::<IMAGE_IMPORT_DESCRIPTOR>()) as u32;
-        let img_import_descriptor = address.offset(pe.entry_import_data.VirtualAddress as isize) as *mut IMAGE_IMPORT_DESCRIPTOR;
+        let img_import_descriptor = address.offset(pe.entry_import_data.VirtualAddress as isize) 
+            as *mut IMAGE_IMPORT_DESCRIPTOR;
 
         for i in 0..entries {
             let img_import_descriptor = img_import_descriptor.offset(i as isize);
@@ -338,11 +342,11 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
                     // Resolve function by name
                     let import_by_name = address.add((*original_first_chunk).u1.AddressOfData as usize) as *mut IMAGE_IMPORT_BY_NAME;
                     let func_name = &(*import_by_name).Name as *const i8;
-                    GetProcAddress(h_module, PCSTR(func_name as *const u8))
+                    GetProcAddress(h_module, PCSTR(func_name.cast()))
                 };
 
                 match func_address {
-                    Some(addr) => (*first_thunk).u1.Function = addr as *const () as u64,
+                    Some(addr) => (*first_thunk).u1.Function = addr as u64,
                     None => {
                         let func_name = if image_snap_by_ordinal((*original_first_chunk).u1.Ordinal) {
                             format!("{}", image_ordinal((*original_first_chunk).u1.Ordinal))
@@ -350,6 +354,7 @@ fn fixing_iat(pe: &PE, address: *mut c_void) -> Result<(), String> {
                             let import_by_name = address.add((*original_first_chunk).u1.AddressOfData as usize) as *mut IMAGE_IMPORT_BY_NAME;
                             format!("{:?}", CStr::from_ptr(&(*import_by_name).Name as *const i8))
                         };
+
                         return Err(format!("Failed to find function: {}", func_name));
                     }
                 };
