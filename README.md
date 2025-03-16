@@ -219,15 +219,15 @@ The repository is organized into several projects, each with its own purpose and
 
 Here are some other examples of projects I've done with Rust:
 
-- [shadow-rs](https://github.com/joaoviictorti/shadow-rs)
+- [**shadow-rs**](https://github.com/joaoviictorti/shadow-rs)
     - Windows Kernel Rootkit.
-- [coffeeldr](https://github.com/joaoviictorti/coffeeldr)
+- [**coffeeldr**](https://github.com/joaoviictorti/coffeeldr)
     - COFF Loader.
-- [rustclr](https://github.com/joaoviictorti/rustclr)
+- [**rustclr**](https://github.com/joaoviictorti/rustclr)
     - Host CLR and run .NET binaries.
-- [userdmp](https://github.com/joaoviictorti/userdmp)
+- [**userdmp**](https://github.com/joaoviictorti/userdmp)
     - A Rust crate to parse user-mode minidump files generated on Windows.
-- [dinvk](https://github.com/joaoviictorti/dinvk)
+- [**dinvk**](https://github.com/joaoviictorti/dinvk)
     - Dynamically invoke arbitrary code with Rust tricks, #[no_std] support, and compatibility for x64, x86 and WoW64 (DInvoke)
 
 ## Resources
