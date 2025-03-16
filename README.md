@@ -228,6 +228,9 @@ Here are some other examples of projects I've done with Rust:
 - [userdmp](https://github.com/joaoviictorti/userdmp)
     - A Rust crate to parse user-mode minidump files generated on Windows.
 
+- [dinvk](https://github.com/joaoviictorti/dinvk)
+    - Dynamically invoke arbitrary code with Rust tricks, #[no_std] support, and compatibility for x64, x86 and WoW64 (DInvoke)
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
