@@ -1,8 +1,9 @@
 use windows::Win32::Foundation::{HANDLE, LUID};
 use windows::Win32::Security::*;
-use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+use windows::Win32::System::Threading::OpenProcessToken;
+use windows::core::Result;
 
-fn main() {
+fn main() -> Result<()> {
     let tokens = vec![
         SE_ASSIGNPRIMARYTOKEN_NAME,
         SE_AUDIT_NAME,
@@ -39,12 +40,11 @@ fn main() {
         SE_TIME_ZONE_NAME,
         SE_TRUSTED_CREDMAN_ACCESS_NAME,
         SE_UNDOCK_NAME,
-        SE_UNSOLICITED_INPUT_NAME,
     ];
 
     unsafe {
         let mut h_token = HANDLE::default();
-        let mut token_privileges = TOKEN_PRIVILEGES {
+        let mut token_priv = TOKEN_PRIVILEGES {
             PrivilegeCount: 1,
             Privileges: [LUID_AND_ATTRIBUTES {
                 Luid: LUID::default(),
@@ -52,19 +52,13 @@ fn main() {
             }; 1],
         };
 
-        let _ = OpenProcessToken(
-            GetCurrentProcess(),
-            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-            &mut h_token,
-        );
+        OpenProcessToken(HANDLE(-1isize), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &mut h_token,)?;
+
         for token in tokens {
-            let _ = LookupPrivilegeValueW(
-                None,
-                token,
-                &mut token_privileges.Privileges[0].Luid as *mut LUID,
-            );
-    
-            let _ = AdjustTokenPrivileges(h_token, false, Some(&token_privileges), 0, None, None);
+            LookupPrivilegeValueW(None, token, &mut token_priv.Privileges[0].Luid as *mut LUID)?;
+            AdjustTokenPrivileges(h_token, false, Some(&token_priv), 0, None, None)?;
         }
     }
+
+    Ok(())
 }
