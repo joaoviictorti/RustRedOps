@@ -1,25 +1,19 @@
 use std::{
-    env,
-    fs::File,
-    io::{self, Read},
+    error::Error, 
+    fs::File, 
+    io::Read
 };
-use windows::Win32::System::Diagnostics::Debug::{
-    IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DIRECTORY_ENTRY_EXCEPTION, IMAGE_DIRECTORY_ENTRY_EXPORT,
-    IMAGE_DIRECTORY_ENTRY_IAT, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_DIRECTORY_ENTRY_RESOURCE,
-    IMAGE_DIRECTORY_ENTRY_TLS, IMAGE_NT_HEADERS64, IMAGE_NT_OPTIONAL_HDR32_MAGIC,
-    IMAGE_SCN_MEM_EXECUTE, IMAGE_SCN_MEM_READ, IMAGE_SCN_MEM_WRITE, IMAGE_SECTION_CHARACTERISTICS,
-    IMAGE_SECTION_HEADER,
-};
+use windows::Win32::System::Diagnostics::Debug::*;
 use windows::Win32::System::{
     Diagnostics::Debug::IMAGE_NT_OPTIONAL_HDR_MAGIC,
     SystemInformation::IMAGE_FILE_MACHINE_I386,
     SystemServices::{IMAGE_DOS_HEADER, IMAGE_DOS_SIGNATURE, IMAGE_NT_SIGNATURE},
 };
 
-fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
+fn main() -> Result<(), Box<dyn Error>> {
+    let args = std::env::args().collect::<Vec<String>>();
     let pe = &args[1];
-    
+
     let mut file = File::open(pe)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
@@ -30,7 +24,8 @@ fn main() -> io::Result<()> {
             panic!("[!] Invalid IMAGE_DOS_SIGNATURE");
         }
 
-        let nt_header = (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
+        let nt_header =
+            (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
             panic!("[!] INVALID NT SIGNATURE");
         }
@@ -38,8 +33,9 @@ fn main() -> io::Result<()> {
         println!("==================== FILE HEADER ==========================");
         let file_header = (*nt_header).FileHeader;
         println!("[+] (FILE_HEADER) Arch: {}", if file_header.Machine == IMAGE_FILE_MACHINE_I386 { "x32" } else { "x64" });
+
         println!("[+] Number of sections: {}", file_header.NumberOfSections);
-        println!("[+] Size Optional Header: {}\n",file_header.SizeOfOptionalHeader);
+        println!("[+] Size Optional Header: {}\n", file_header.SizeOfOptionalHeader);
 
         println!("==================== OPTIONAL HEADER ======================");
         let optional_header = (*nt_header).OptionalHeader;
@@ -72,12 +68,14 @@ fn main() -> io::Result<()> {
         println!(
             "[+] EXCEPTION DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize].Size,
-            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize].VirtualAddress
+            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize]
+                .VirtualAddress
         );
         println!(
             "[+] BASE RELOCATION TABLE WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize].Size,
-            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize].VirtualAddress
+            optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize]
+                .VirtualAddress
         );
         println!(
             "[+] TLS DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
@@ -91,29 +89,44 @@ fn main() -> io::Result<()> {
         );
         println!("==================== SECTIONS =============================");
 
-        let mut section_header = (nt_header as usize + std::mem::size_of::<IMAGE_NT_HEADERS64>()) as *mut IMAGE_SECTION_HEADER;
+        let mut section_header = (nt_header as usize + std::mem::size_of::<IMAGE_NT_HEADERS64>())
+            as *mut IMAGE_SECTION_HEADER;
 
         for _ in 0..file_header.NumberOfSections {
-            println!("[#] {}", std::str::from_utf8(&(*section_header).Name).unwrap());
+            println!("[#] {}", std::str::from_utf8(&(*section_header).Name)?);
             println!("\tSize: {}", (*section_header).SizeOfRawData);
             println!("\tRVA: 0x{:08X}", (*section_header).VirtualAddress);
             println!("\tRelocations: {}", (*section_header).NumberOfRelocations);
             println!("\tAddress: 0x{:016X}", buffer.as_ptr() as usize + (*section_header).VirtualAddress as usize);
             println!("\tPermissions: ");
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_READ != IMAGE_SECTION_CHARACTERISTICS(0) {
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_READ
+                != IMAGE_SECTION_CHARACTERISTICS(0)
+            {
                 println!("\t\tPAGE_READONLY")
             }
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_WRITE != IMAGE_SECTION_CHARACTERISTICS(0) {
+            
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_WRITE
+                != IMAGE_SECTION_CHARACTERISTICS(0)
+            {
                 println!("\t\tPAGE_READWRITE")
             }
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != IMAGE_SECTION_CHARACTERISTICS(0) {
+            
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE
+                != IMAGE_SECTION_CHARACTERISTICS(0) 
+            {
                 println!("\t\tPAGE_EXECUTE")
             }
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != IMAGE_SECTION_CHARACTERISTICS(0) 
-                && (*section_header).Characteristics & IMAGE_SCN_MEM_READ != IMAGE_SECTION_CHARACTERISTICS(0) {
+            
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE
+                != IMAGE_SECTION_CHARACTERISTICS(0)
+                && (*section_header).Characteristics & IMAGE_SCN_MEM_READ
+                    != IMAGE_SECTION_CHARACTERISTICS(0)
+            {
                 println!("\t\tPAGE_EXECUTE_READWRITE")
             }
-            section_header = (section_header as usize + std::mem::size_of::<IMAGE_SECTION_HEADER>()) as *mut IMAGE_SECTION_HEADER;
+            
+            section_header = (section_header as usize + size_of::<IMAGE_SECTION_HEADER>())
+                as *mut IMAGE_SECTION_HEADER;
         }
     }
 
