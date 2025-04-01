@@ -67,6 +67,7 @@ impl Hook {
     /// * `function_hook` - Pointer to the function to be overwritten.
     ///
     /// # Returns
+    /// 
     /// * A new `Hook` instance.
     fn new(function_run: *mut c_void, function_hook: *mut c_void) -> Self {
         Self {
