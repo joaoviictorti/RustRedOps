@@ -15,7 +15,7 @@ use windows::{
 
 /// Custom replacement for `MessageBoxA` that intercepts parameters and shows a Unicode message box.
 ///
-/// # Parameters
+/// # Arguments
 /// 
 /// * `hwnd` - Handle to the owner window.
 /// * `lp_text` - Pointer to the message text (ANSI).
@@ -61,7 +61,8 @@ struct Hook {
 impl Hook {
     /// Creates a new hook structure linking a target function with the replacement.
     ///
-    /// # Parameters
+    /// # Arguments
+    /// 
     /// * `function_run` - Pointer to the new function.
     /// * `function_hook` - Pointer to the function to be overwritten.
     ///
@@ -80,11 +81,13 @@ impl Hook {
 
     /// Initializes the hook by changing memory protections and saving original bytes.
     ///
-    /// # Parameters
+    /// # Arguments
+    /// 
     /// * `trampoline` - Trampoline code to be written.
     /// * `old_protect` - Variable to store the old protection flags.
     ///
     /// # Returns
+    /// 
     /// * `true` if initialization succeeded, `false` otherwise.
     fn initialize(&mut self, trampoline: &[u8], old_protect: &mut PAGE_PROTECTION_FLAGS) -> bool {
         unsafe {
@@ -103,7 +106,8 @@ impl Hook {
 
     /// Writes the trampoline and redirects the execution flow.
     ///
-    /// # Parameters
+    /// # Arguments
+    /// 
     /// * `trampoline` - Mutable slice representing the JMP stub.
     fn install_hook(&self, trampoline: &mut [u8]) {
         unsafe {
