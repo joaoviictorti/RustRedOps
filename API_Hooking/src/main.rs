@@ -1,4 +1,7 @@
-use std::{mem::size_of, os::raw::c_void, ptr::copy, ffi::{c_char, CStr}};
+use std::{
+    ffi::{c_void, CStr},
+    slice::{from_raw_parts, from_raw_parts_mut},
+};
 use windows::{
     core::{s, w},
     Win32::{
@@ -10,17 +13,26 @@ use windows::{
     },
 };
 
+/// Custom replacement for `MessageBoxA` that intercepts parameters and shows a Unicode message box.
+///
+/// # Parameters
+/// 
+/// * `hwnd` - Handle to the owner window.
+/// * `lp_text` - Pointer to the message text (ANSI).
+/// * `lp_caption` - Pointer to the message box caption (ANSI).
+/// * `u_type` - Message box style flags.
+///
+/// # Returns
+/// 
+/// * Returns the result from the `MessageBoxW` function.
 extern "system" fn my_message_box_a(
     hwnd: HWND,
-    lp_text: *const c_char,
-    lp_caption: *const c_char,
+    lp_text: *const i8,
+    lp_caption: *const i8,
     u_type: MESSAGEBOX_STYLE,
 ) -> MESSAGEBOX_RESULT {
-    let c_str_text = unsafe { CStr::from_ptr(lp_text) };
-    let text = c_str_text.to_string_lossy();
-
-    let c_str_caption = unsafe { CStr::from_ptr(lp_caption) };
-    let caption = c_str_caption.to_string_lossy();
+    let text = unsafe { CStr::from_ptr(lp_text).to_string_lossy() };
+    let caption = unsafe { CStr::from_ptr(lp_caption).to_string_lossy() };
 
     println!("[+] Parameters sent by the original function:");
     println!("\t - text    : {}", text);
@@ -29,18 +41,34 @@ extern "system" fn my_message_box_a(
     unsafe { MessageBoxW(hwnd, w!("HOOK"), w!("ENABLED!"), u_type) }
 }
 
+/// Structure to manage function hooking and restoration.
 struct Hook {
+    /// Backup of original bytes overwritten by the trampoline.
     #[cfg(target_arch = "x86_64")]
     bytes_original: [u8; 13],
+
+    /// Backup of original bytes overwritten by the trampoline (x86).
     #[cfg(target_arch = "x86")]
     bytes_original: [u8; 7],
+
+    /// Pointer to the custom function to redirect execution to.
     function_run: *mut c_void,
+
+    /// Pointer to the target function to be hooked.
     function_hook: *mut c_void,
 }
 
 impl Hook {
+    /// Creates a new hook structure linking a target function with the replacement.
+    ///
+    /// # Parameters
+    /// * `function_run` - Pointer to the new function.
+    /// * `function_hook` - Pointer to the function to be overwritten.
+    ///
+    /// # Returns
+    /// * A new `Hook` instance.
     fn new(function_run: *mut c_void, function_hook: *mut c_void) -> Self {
-        Hook {
+        Self {
             #[cfg(target_arch = "x86_64")]
             bytes_original: [0; 13],
             #[cfg(target_arch = "x86")]
@@ -50,42 +78,44 @@ impl Hook {
         }
     }
 
+    /// Initializes the hook by changing memory protections and saving original bytes.
+    ///
+    /// # Parameters
+    /// * `trampoline` - Trampoline code to be written.
+    /// * `old_protect` - Variable to store the old protection flags.
+    ///
+    /// # Returns
+    /// * `true` if initialization succeeded, `false` otherwise.
     fn initialize(&mut self, trampoline: &[u8], old_protect: &mut PAGE_PROTECTION_FLAGS) -> bool {
         unsafe {
-            copy(
-                self.function_hook,
-                self.bytes_original.as_mut_ptr() as *mut c_void,
-                trampoline.len(),
-            );
-
-            let result = VirtualProtect(
-                self.function_hook,
-                trampoline.len(),
-                PAGE_EXECUTE_READWRITE,
-                old_protect,
-            );
+            let result = VirtualProtect(self.function_hook, trampoline.len(), PAGE_EXECUTE_READWRITE, old_protect);
             if result.is_err() {
-                println!("[!] VirtualProtect Failed With Error {:?}", result.err());
+                eprintln!("[!] VirtualProtect Failed With Error {:?}", result.err());
                 return false;
             }
+
+            let bytes = from_raw_parts(self.function_hook.cast::<u8>(), trampoline.len());
+            self.bytes_original.copy_from_slice(bytes);
         }
+
         true
     }
 
+    /// Writes the trampoline and redirects the execution flow.
+    ///
+    /// # Parameters
+    /// * `trampoline` - Mutable slice representing the JMP stub.
     fn install_hook(&self, trampoline: &mut [u8]) {
-
         unsafe {
-            copy(
-                &self.function_run as  *const _ as *const c_void,
-                trampoline[2..].as_mut_ptr() as *mut c_void,
-                size_of::<*mut c_void>(),
-            );
+            let dst = trampoline[2..].as_mut_ptr();
+            let src = &self.function_run as *const *mut c_void as *const u8;
 
-            copy(
-                trampoline.as_ptr() as *const c_void,
-                self.function_hook,
-                trampoline.len(),
-            );
+            let trampoline_bytes = from_raw_parts_mut(dst, std::mem::size_of::<*const c_void>());
+            let func_bytes = from_raw_parts(src, std::mem::size_of::<*const c_void>());
+            trampoline_bytes.copy_from_slice(func_bytes);
+
+            let dst_code = from_raw_parts_mut(self.function_hook.cast::<u8>(), trampoline.len());
+            dst_code.copy_from_slice(trampoline);
         }
     }
 }
@@ -103,39 +133,38 @@ fn main() {
         0xFF, 0xE0, // jmp eax
     ];
 
+    // Load target DLL and resolve target function
     let hmodule = unsafe { LoadLibraryA(s!("user32.dll")).unwrap() };
     let func = unsafe { GetProcAddress(hmodule, s!("MessageBoxA")).unwrap() };
 
-    let mut hook = Hook::new(my_message_box_a as *mut c_void, func as *mut c_void);
-
+    // Initialize hook and apply trampoline
     let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-
+    let mut hook = Hook::new(my_message_box_a as *mut c_void, func as *mut c_void);
     if hook.initialize(&mut trampoline, &mut oldprotect) {
         hook.install_hook(&mut trampoline);
     } else {
-        println!("[!] Failed to Apply Hook!");
+        eprintln!("[!] Failed to Apply Hook!");
         return;
     }
 
     unsafe {
-
+        // Trigger the hook
         MessageBoxA(HWND(0), s!("Test Message"), s!("Test"), MB_OK);
-
         println!("[+] Hook disabled");
-        copy(
-            hook.bytes_original.as_ptr(),
-            hook.function_hook as *mut u8,
-            trampoline.len(),
-        );
 
-        let mut d_old_protect = PAGE_PROTECTION_FLAGS(0);
-        let protection_address = VirtualProtect(hook.function_hook, trampoline.len(), oldprotect, &mut d_old_protect);
+        // Restore original bytes
+        let restore_target = from_raw_parts_mut(hook.function_hook.cast::<u8>(), trampoline.len());
+        restore_target.copy_from_slice(&hook.bytes_original);
 
-        if protection_address.is_err() {
-            println!("[!] VirtualProtect Failed With Error {:?}", protection_address.err());
-            return ;
+        // Restore memory protection
+        let mut old_protect = PAGE_PROTECTION_FLAGS(0);
+        let addr = VirtualProtect(hook.function_hook, trampoline.len(), oldprotect, &mut old_protect);
+        if addr.is_err() {
+            eprintln!("[!] VirtualProtect Failed With Error {:?}", addr.err());
+            return;
         }
 
+        // Call again with restored hook
         MessageBoxA(HWND(0), s!("Test Message"), s!("Test"), MB_OK);
     }
 
