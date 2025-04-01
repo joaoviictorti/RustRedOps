@@ -24,8 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             panic!("[!] Invalid IMAGE_DOS_SIGNATURE");
         }
 
-        let nt_header =
-            (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
+        let nt_header = (dos_header as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
             panic!("[!] INVALID NT SIGNATURE");
         }
