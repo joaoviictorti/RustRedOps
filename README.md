@@ -134,7 +134,7 @@ The repository is organized into several projects, each with its own purpose and
 27. [**Local PE Injection**](/Local_PE_Injection)
     - Running a PE file in memory.
 
-28. [**Minidump-rs**](/Minidump-rs)
+28. [**Minidump**](/Minidump)
     - Dumping the lsass.exe process.
 
 29. [**Module Stomping**](/Module_Stomping)
