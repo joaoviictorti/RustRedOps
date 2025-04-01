@@ -115,8 +115,8 @@ impl Hook {
             let dst = trampoline[2..].as_mut_ptr();
             let src = &self.function_run as *const *mut c_void as *const u8;
 
-            let trampoline_bytes = from_raw_parts_mut(dst, std::mem::size_of::<*const c_void>());
-            let func_bytes = from_raw_parts(src, std::mem::size_of::<*const c_void>());
+            let trampoline_bytes = from_raw_parts_mut(dst, size_of::<*const c_void>());
+            let func_bytes = from_raw_parts(src, size_of::<*const c_void>());
             trampoline_bytes.copy_from_slice(func_bytes);
 
             let dst_code = from_raw_parts_mut(self.function_hook.cast::<u8>(), trampoline.len());
