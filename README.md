@@ -229,6 +229,9 @@ Here are some other examples of projects I've done with Rust:
     - A Rust crate to parse user-mode minidump files generated on Windows.
 - [**dinvk**](https://github.com/joaoviictorti/dinvk)
     - Dynamically invoke arbitrary code with Rust tricks, #[no_std] support, and compatibility for `x64`, `x86`, `ARM64` and `WoW64` (DInvoke)
+- [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
+    - A runas implementation with extra features in Rust
+
 ## Resources
 
 - Each individual project can include a features section that details the project's main features and functionalities.
