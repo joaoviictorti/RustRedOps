@@ -83,7 +83,7 @@ The repository is organized into several projects, each with its own purpose and
 16. [**Enumeration Process**](/Enumeration_Processes)
     - Enumerating processes with Rust.
 
-17. [**Enable All Tokens**](/Enable_All_Tokens)
+17. [**Token**](/Token)
     - Enabling all privilege tokens.
 
 18. [**Execute Command**](/Execute_Command)
@@ -245,6 +245,7 @@ Here are some other examples of projects I've done with Rust:
 ## Compile
 
 ### Compiling the Project
+
 To start the compilation, use the following command:
 
 ```sh
@@ -252,6 +253,7 @@ cargo build --release
 ```
 
 ### Adding Destination Architectures
+
 If you are using a different operating system or need to compile for a specific architecture, you can list all available target architectures with the following command:
 
 ```sh
@@ -289,6 +291,7 @@ Follow these steps to start using the projects in this repository:
 
 
 ## Contributing to RustRedOps
+
 To contribute to **RustRedOps**, follow these steps:
 
 1. Fork this repository.
@@ -300,6 +303,7 @@ To contribute to **RustRedOps**, follow these steps:
 Alternatively, consult the [GitHub documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests) on how to create a pull request.
 
 ## References
+
 I would like to express my sincere gratitude to the creators of remarkable projects and fascinating techniques, who provided me with the tools and inspiration needed to create this extraordinary repository.
 
 * https://github.com/MemN0ps
