@@ -29,6 +29,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
 * [How to get started](#how-to-get-started)
 * [Contributing to RustRedOps](#contributing-to-rustRedOps)
 * [References](#references)
+    * [Other Essential Resources](#other-essential-resources)
 * [License](#license)
 
 ## Contents
@@ -306,14 +307,18 @@ Alternatively, consult the [GitHub documentation](https://docs.github.com/en/pul
 
 I would like to express my sincere gratitude to the creators of remarkable projects and fascinating techniques, who provided me with the tools and inspiration needed to create this extraordinary repository.
 
-* https://github.com/MemN0ps
-* https://github.com/hasherezade
-* https://github.com/vxunderground 
-* https://github.com/NUL0x4C
-* https://github.com/mrd0x
-* https://github.com/Cracked5pider
-* https://github.com/trickster0
-* https://github.com/BlWasp
+* [MemN0ps](https://github.com/MemN0ps)
+* [hasherezade](https://github.com/hasherezade)
+* [vxunderground](https://github.com/vxunderground) 
+* [NUL0x4C](https://github.com/NUL0x4C)
+* [mrd0x](https://github.com/mrd0x)
+* [Cracked5pider](https://github.com/Cracked5pider)
+* [trickster0](https://github.com/trickster0)
+* [BlWasp](https://github.com/BlWasp)
+* [CCob](https://github.com/CCob)
+
+### Other Essential Resources:
+
 * https://balwurk.com/shellcode-evasion-using-webassembly-and-rust
 * https://github.com/janoglezcampos/rust_syscalls
 * https://github.com/microsoft
@@ -321,7 +326,6 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://github.com/rust-osdev/uefi-rs
 * https://github.com/StephanvanSchaik/windows-kernel-rs
 * https://discord.gg/rust-lang-community (Discord community that helped a lot)
-* https://github.com/CCob
 * https://github.com/anvie/litcrypt.rs
 
 ## License
