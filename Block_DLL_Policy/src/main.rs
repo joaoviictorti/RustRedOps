@@ -1,89 +1,119 @@
 use std::{ptr::null_mut, ffi::c_void};
-use windows::core::PSTR;
+use windows::core::{PSTR, Result};
 use windows::Win32::System::{
+    Threading::*,
     Memory::{GetProcessHeap, HeapAlloc, HEAP_ZERO_MEMORY},
     SystemServices::{
-        PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY, PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY_0,
-    },
-    Threading::{
-        CreateProcessA, DeleteProcThreadAttributeList, InitializeProcThreadAttributeList,
-        ProcessSignaturePolicy, SetProcessMitigationPolicy, UpdateProcThreadAttribute,
-        EXTENDED_STARTUPINFO_PRESENT, LPPROC_THREAD_ATTRIBUTE_LIST, PROCESS_INFORMATION,
-        PROCESS_MITIGATION_POLICY, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, STARTUPINFOEXA,
-        STARTUPINFOW_FLAGS,
+        PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY, 
+        PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY_0,
     },
 };
 
+/// Constant for enabling DLL Signature Blocking for non-Microsoft binaries
 const PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON: u64 = 0x00000001u64 << 44;
 
-fn main() {
-    create_process_block_dll();
-    // current_process_block_dll();
+/// Method selector: `1` = create new process, `else` = apply to current process
+const METHOD: u32 = 1;
+
+fn main() -> Result<()> {
+    if METHOD == 1 {
+        create_process_block_dll()?;
+    } else {
+        current_process_block_dll()?;
+    }
+
+    Ok(())
 }
 
-#[allow(dead_code)]
-fn current_process_block_dll() {
+/// Applies binary signature mitigation to the current process.
+///
+/// This enables blocking of all DLLs that are not signed by Microsoft in the current process context.
+/// 
+/// # Errors
+///
+/// Returns a [`windows::core::Error`] if the mitigation policy fails to apply. 
+fn current_process_block_dll() -> Result<()> {
     unsafe {
         let mut policy = PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY {
             Anonymous: PROCESS_MITIGATION_BINARY_SIGNATURE_POLICY_0 { Flags: 0 },
         };
+
+        // Set "Microsoft Signed Only" flag
         policy.Anonymous.Flags |= 1 << 0;
-        let _ = SetProcessMitigationPolicy(
+        SetProcessMitigationPolicy(
             PROCESS_MITIGATION_POLICY(ProcessSignaturePolicy.0),
             &policy as *const _ as *const _,
-            std::mem::size_of_val(&policy),
-        );
+            size_of_val(&policy),
+        )?;
     }
+
+    Ok(())
 }
 
-fn create_process_block_dll() {
-    let mut process_information = PROCESS_INFORMATION::default();
-    let mut startup_info = STARTUPINFOEXA::default();
-    startup_info.StartupInfo.cb = std::mem::size_of::<STARTUPINFOEXA>() as u32;
-    startup_info.StartupInfo.dwFlags = STARTUPINFOW_FLAGS(EXTENDED_STARTUPINFO_PRESENT.0);
-    let mut attr_size: usize = 0;
+/// Spawns a new process with DLL signature enforcement enabled.
+///
+/// Applies the mitigation policy that blocks non-Microsoft signed DLLs to a child process.
+/// This uses the `PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY` extended startup info flag.
+/// 
+/// # Errors
+///
+/// Returns a [`windows::core::Error`] if any of the process attribute, heap allocation,
+/// or process creation steps fail.
+fn create_process_block_dll() -> Result<()> {
+    let mut size = 0;
+    let mut pi = PROCESS_INFORMATION::default();
+    let mut si = STARTUPINFOEXA::default();
+    si.StartupInfo.cb = size_of::<STARTUPINFOEXA>() as u32;
+    si.StartupInfo.dwFlags = STARTUPINFOW_FLAGS(EXTENDED_STARTUPINFO_PRESENT.0);
+
     unsafe {
-        let _ = InitializeProcThreadAttributeList(
+        // First call gets required buffer size
+        InitializeProcThreadAttributeList(
             LPPROC_THREAD_ATTRIBUTE_LIST(null_mut()),
             1,
             0,
-            &mut attr_size,
-        );
+            &mut size,
+        )?;
 
+        // Allocate attribute list
         let attr_list = LPPROC_THREAD_ATTRIBUTE_LIST(HeapAlloc(
-            GetProcessHeap().unwrap(),
+            GetProcessHeap()?,
             HEAP_ZERO_MEMORY,
-            attr_size,
+            size,
         ));
 
-        let _ = InitializeProcThreadAttributeList(attr_list, 1, 0, &mut attr_size);
+        InitializeProcThreadAttributeList(attr_list, 1, 0, &mut size)?;
 
+        // Apply the mitigation policy to block non-Microsoft binaries
         let policy = PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
-        let _ = UpdateProcThreadAttribute(
+        UpdateProcThreadAttribute(
             attr_list,
             0,
             PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY as usize,
             Some(&policy as *const _ as *const c_void),
-            std::mem::size_of::<u64>(),
+            size_of::<u64>(),
             None,
             None,
-        );
+        )?;
 
+        // Prepare process launch path (SystemSettingsBroker.exe)
         let windir = std::env::var("WINDIR").unwrap() + "\\System32\\SystemSettingsBroker.exe";
-        startup_info.lpAttributeList = attr_list;
-        let _ = CreateProcessA(
+        si.lpAttributeList = attr_list;
+        CreateProcessA(
             None,
-            PSTR(windir.as_ptr() as _),
+            PSTR(windir.as_ptr().cast_mut()),
             None,
             None,
             false,
             EXTENDED_STARTUPINFO_PRESENT,
             None,
             None,
-            &startup_info.StartupInfo,
-            &mut process_information,
-        );
+            &si.StartupInfo,
+            &mut pi,
+        )?;
 
         DeleteProcThreadAttributeList(attr_list);
     }
+
+    Ok(())
 }
