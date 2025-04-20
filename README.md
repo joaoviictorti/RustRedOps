@@ -19,8 +19,8 @@ RustRedOps is a repository that houses various tools and projects related to Red
 ## Table of Contents
 
 * [Contents](#contents)
-* [Resources](#resources)
 * [Other Rust projects](#other-rust-projects)
+* [Resources](#resources)
 * [Requirements](#requirements)
 * [Compile](#compile)
     * [Compiling the Project](#compiling-the-project)
@@ -106,32 +106,14 @@ The repository is organized into several projects, each with its own purpose and
     - This project addresses the direct execution of malicious payloads in a system's local environment.
 
 24. [**Mapping Injection**](/Mapping_Injection)
-    * [**Local**](/Mapping_Injection/Local)
-      
-      Performing malicious code injection via memory mapping into local processes.
-
-    * [**Remote**](/Mapping_Injection/Remote)
-    
-      Performing malicious code injection via memory mapping into remote processes.
+    - Code injection technique that leverages memory mapping, with the same underlying method applied to either local or remote processes
 
 25. [**Function Stomping Injection**](/Function_Stomping_Injection)
-    * [**Local**](/Function_Stomping_Injection/Local)
-      
-      It focuses on replacing locally running functions with malicious code, changing their default behavior.
-
-    * [**Remote**](/Function_Stomping_Injection/Remote)
-
-      It exploits the substitution of functions in remote systems to carry out malicious activities.
+    - Involves replacing legitimate functions with malicious code.
 
 26. [**Thread Hijacking**](/Thread_Hijacking)
-    * [**Local**](/Thread_Hijacking/Local)
+    - Focuses on hijacking existing threads to execute arbitrary code.
     
-      This project deals with hijacking the threads of processes running on the local system to execute malicious code.
-    
-    * [**Remote**](/Thread_Hijacking/Remote)
-    
-      It addresses the hijacking of threads in remote system processes to carry out malicious actions. 
-
 27. [**Local PE Injection**](/Local_PE_Injection)
     - Running a PE file in memory.
 
@@ -266,7 +248,8 @@ Once you have identified the desired target architecture, add it using rustup:
 ```sh
 rustup target add <arch>
 ```
-Replace <arch> with the desired architecture, such as x86_64-pc-windows-gnu.
+
+Replace `<arch>` with the desired architecture, such as `x86_64-pc-windows-gnu`.
 
 ### Compiling for a Specific Architecture
 
@@ -324,8 +307,7 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * https://github.com/microsoft
 * https://ired.team
 * https://github.com/rust-osdev/uefi-rs
-* https://github.com/StephanvanSchaik/windows-kernel-rs
-* https://discord.gg/rust-lang-community (Discord community that helped a lot)
+* https://discord.gg/rust-lang-community
 * https://github.com/anvie/litcrypt.rs
 
 ## License
