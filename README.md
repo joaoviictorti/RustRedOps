@@ -141,10 +141,10 @@ The repository is organized into several projects, each with its own purpose and
 35. [**Parsing PE Headers**](/Parsing_PE)
     -  The code is focused on parsing the PE header of any Windows executable file.
 
-36. [**Patch ETW**](/Patch_ETW)
+36. [**ETW**](/ETW)
     - Patching ETW.
 
-37. [**Patch AMSI**](/Patch_AMSI)
+37. [**AMSI**](/AMSI)
     - Patching AMSI.
 
 38. [**Payload Execution Control**](/Payload_Execution_Control)
