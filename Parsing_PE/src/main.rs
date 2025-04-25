@@ -1,8 +1,3 @@
-use std::{
-    error::Error, 
-    fs::File, 
-    io::Read
-};
 use windows::Win32::System::Diagnostics::Debug::*;
 use windows::Win32::System::{
     Diagnostics::Debug::IMAGE_NT_OPTIONAL_HDR_MAGIC,
@@ -10,14 +5,11 @@ use windows::Win32::System::{
     SystemServices::{IMAGE_DOS_HEADER, IMAGE_DOS_SIGNATURE, IMAGE_NT_SIGNATURE},
 };
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().collect::<Vec<String>>();
-    let pe = &args[1];
-
-    let mut file = File::open(pe)?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-
+    let file = &args[1];
+    let buffer = std::fs::read(file)?;
+    
     unsafe {
         let dos_header = buffer.as_ptr() as *mut IMAGE_DOS_HEADER;
         if (*dos_header).e_magic != IMAGE_DOS_SIGNATURE {
@@ -54,41 +46,47 @@ fn main() -> Result<(), Box<dyn Error>> {
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT.0 as usize].VirtualAddress
         );
+        
         println!(
             "[+] IMPORT DIRECTORY WITH SIZE: {} | RVA: 0x{:08X}",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT.0 as usize].VirtualAddress
         );
+
         println!(
             "[+] RESOURCE DIRECTORY WITH SIZE: {} | RVA: 0x{:08X}",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE.0 as usize].VirtualAddress
         );
+        
         println!(
             "[+] EXCEPTION DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION.0 as usize]
                 .VirtualAddress
         );
+        
         println!(
             "[+] BASE RELOCATION TABLE WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC.0 as usize]
                 .VirtualAddress
         );
+        
         println!(
             "[+] TLS DIRECTORY WITH SIZE: {} | (RVA: 0x{:08X})",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS.0 as usize].VirtualAddress
         );
+        
         println!(
             "[+] IMPORT ADDRESS TABLE WITH SIZE: {} | (RVA: 0x{:08X})\n",
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT.0 as usize].Size,
             optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT.0 as usize].VirtualAddress
         );
+        
         println!("==================== SECTIONS =============================");
-
-        let mut section_header = (nt_header as usize + std::mem::size_of::<IMAGE_NT_HEADERS64>())
+        let mut section_header = (nt_header as usize + size_of::<IMAGE_NT_HEADERS64>())
             as *mut IMAGE_SECTION_HEADER;
 
         for _ in 0..file_header.NumberOfSections {
@@ -97,35 +95,30 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("\tRVA: 0x{:08X}", (*section_header).VirtualAddress);
             println!("\tRelocations: {}", (*section_header).NumberOfRelocations);
             println!("\tAddress: 0x{:016X}", buffer.as_ptr() as usize + (*section_header).VirtualAddress as usize);
+            
             println!("\tPermissions: ");
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_READ
-                != IMAGE_SECTION_CHARACTERISTICS(0)
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_READ != IMAGE_SECTION_CHARACTERISTICS(0)
             {
                 println!("\t\tPAGE_READONLY")
             }
             
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_WRITE
-                != IMAGE_SECTION_CHARACTERISTICS(0)
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_WRITE != IMAGE_SECTION_CHARACTERISTICS(0)
             {
                 println!("\t\tPAGE_READWRITE")
             }
             
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE
-                != IMAGE_SECTION_CHARACTERISTICS(0) 
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != IMAGE_SECTION_CHARACTERISTICS(0) 
             {
                 println!("\t\tPAGE_EXECUTE")
             }
             
-            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE
-                != IMAGE_SECTION_CHARACTERISTICS(0)
-                && (*section_header).Characteristics & IMAGE_SCN_MEM_READ
-                    != IMAGE_SECTION_CHARACTERISTICS(0)
+            if (*section_header).Characteristics & IMAGE_SCN_MEM_EXECUTE != IMAGE_SECTION_CHARACTERISTICS(0)
+                && (*section_header).Characteristics & IMAGE_SCN_MEM_READ != IMAGE_SECTION_CHARACTERISTICS(0)
             {
                 println!("\t\tPAGE_EXECUTE_READWRITE")
             }
             
-            section_header = (section_header as usize + size_of::<IMAGE_SECTION_HEADER>())
-                as *mut IMAGE_SECTION_HEADER;
+            section_header = section_header.add(1);
         }
     }
 
