@@ -214,6 +214,8 @@ Here are some other examples of projects I've done with Rust:
     - Dynamically invoke arbitrary code with Rust tricks, #[no_std] support, and compatibility for `x64`, `x86`, `ARM64` and `WoW64` (DInvoke)
 - [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
     - A runas implementation with extra features in Rust
+- [**uwd**](https://github.com/joaoviictorti/uwd)
+    - Call Stack Spoofing for Rust with support #[no_std]
 
 ## Resources
 
