@@ -32,7 +32,6 @@ fn main() {
 
     let decrypted = descrypt_aes(&encrypted);
     println!("Decrypted Shellcode: {:x?}", decrypted);
-
 }
 
 fn encrypt_aes(buf: &[u8]) -> Vec<u8> {
