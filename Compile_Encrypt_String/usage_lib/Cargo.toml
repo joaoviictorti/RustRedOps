@@ -1,7 +1,0 @@
-[package]
-name = "usage"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-encrypt_string = { path = "../encrypt_string" }

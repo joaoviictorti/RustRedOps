@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 use syn::{parse_macro_input, LitStr};
 
 #[proc_macro]
-pub fn encrypt_string(input: TokenStream) -> TokenStream {
+pub fn obf(input: TokenStream) -> TokenStream {
     let input_str = parse_macro_input!(input as LitStr);
     let mut rand = thread_rng();
     let key: u8 = rand.gen();
