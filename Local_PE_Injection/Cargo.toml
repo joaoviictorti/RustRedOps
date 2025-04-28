@@ -1,11 +1,10 @@
 [package]
-name = "local_pe_injection"
+name = "pe_injection"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
-ntapi = "0.4.1"
 
 [dependencies.windows]
 version = "0.54.0"
