@@ -11,6 +11,5 @@ strip = "debuginfo"
 panic = "abort"
 strip = "debuginfo"
 
-
 [dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "synchapi", "errhandlingapi", "processthreadsapi"] }
+windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_System_Kernel", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
