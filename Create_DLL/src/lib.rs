@@ -9,10 +9,11 @@ extern "system" fn DllMain(hinstance: HINSTANCE, reason: u32, _: *mut std::ffi::
     match reason {
         DLL_PROCESS_ATTACH => {
             unsafe {
-                MessageBoxA(HWND(0), s!("Hello"), s!("dll"), Default::default());
+                MessageBoxA(HWND(0), s!("Hello"), s!("World"), Default::default());
             }
         },
         _ => {}
     }
+
     true.into()
 }
