@@ -1,18 +1,8 @@
 # Create UEFI 🦀
 
-<p align="left">
-	<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/made%20with-Rust-red"></a>
-	<a href="#"><img src="https://img.shields.io/badge/platform-windows-blueviolet"></a>
-</p>
-
-- [Overview](#overview)
-- [Usage](#usage)
-- [References](#references)
-
-# Overview
 The repository in question is an essential starting point for security experts interested in creating UEFI (Unified Extensible Firmware Interface) using the Rust programming language.
 
-# Usage
+## Usage
 
 The folks at Rust-OSDev demonstrate how to use it on Linux. In my case, I'll be showing it on Windows.
 
@@ -46,7 +36,7 @@ qemu-system-x86_64 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd -dr
 Result:
 ![Result UEFI](img/uefi.png)
 
+## References
 
-# References
 * https://github.com/rust-osdev/uefi-rs
 * https://rust-osdev.github.io/uefi-rs/HEAD/introduction.html
