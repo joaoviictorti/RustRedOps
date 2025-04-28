@@ -1,8 +1,7 @@
 use std::ptr::copy_nonoverlapping;
 use windows::core::{Error, Result};
-use windows::Win32::Foundation::E_FAIL;
 use windows::Win32::{
-    Foundation::HANDLE, 
+    Foundation::{HANDLE, E_FAIL}, 
     System::{
         Memory::*,
         Threading::*,
