@@ -1,4 +1,5 @@
 use core::{ffi::c_void, ffi::CStr, ptr::read};
+use std::slice::from_raw_parts;
 use ntapi::{
     ntldr::LDR_DATA_TABLE_ENTRY,
     ntpebteb::PEB, 
@@ -118,61 +119,74 @@ pub fn ssn(
     export_directory: IMAGE_EXPORT_DIRECTORY
 ) -> Result<u16, ()> {
     unsafe {
-        let functions = (module as usize + export_directory.AddressOfFunctions as usize) as *const u32;
-        let names = (module as usize + export_directory.AddressOfNames as usize) as *const u32;
-        let ordinals = (module as usize + export_directory.AddressOfNameOrdinals as usize) as *const u16;
+        // Retrieving information from module names
+        let names = from_raw_parts(
+           (module as usize + export_directory.AddressOfNames as usize) as *const u32, 
+            export_directory.NumberOfNames as usize
+        );
+
+        // Retrieving information from functions
+        let functions = from_raw_parts(
+            (module as usize + export_directory.AddressOfFunctions as usize) as *const u32, 
+            export_directory.NumberOfFunctions as usize
+        );
+
+        // Retrieving information from ordinals
+        let ordinals = from_raw_parts(
+            (module as usize + export_directory.AddressOfNameOrdinals as usize) as *const u16, 
+            export_directory.NumberOfNames as usize
+        );
     
         for i in 0..export_directory.NumberOfNames as isize {
-            let name_addr = read(names.offset(i)) as usize;
-            let name = CStr::from_ptr((module as usize + name_addr) as *const i8).to_string_lossy();
-    
-            let ordinal = read(ordinals.offset(i)) as isize;
-            let offset = read(functions.offset(ordinal)) as usize;
-            let function_address = (module as usize + offset) as *const u8;
+            let ordinal = ordinals[i as usize] as usize;
+            let address = (module as usize + functions[ordinal] as usize) as *const u8;
+            let name = CStr::from_ptr((module as usize + names[i as usize] as usize) as *const i8)
+                .to_str()
+                .unwrap_or("");
     
             if dbj2(&name) == function_name {
                 // Hells Gate
                 // MOV R10, RCX
                 // MOV RCX, <syscall>
-                if read(function_address) == 0x4C
-                    && read(function_address.add(1)) == 0x8B
-                    && read(function_address.add(2)) == 0xD1
-                    && read(function_address.add(3)) == 0xB8
-                    && read(function_address.add(6)) == 0x00
-                    && read(function_address.add(7)) == 0x00 
+                if read(address) == 0x4C
+                    && read(address.add(1)) == 0x8B
+                    && read(address.add(2)) == 0xD1
+                    && read(address.add(3)) == 0xB8
+                    && read(address.add(6)) == 0x00
+                    && read(address.add(7)) == 0x00 
                 {
-                    let high = read(function_address.add(5)) as u16;
-                    let low = read(function_address.add(4)) as u16;
+                    let high = read(address.add(5)) as u16;
+                    let low = read(address.add(4)) as u16;
                     let ssn = (high << 8) | low;
                     return Ok(ssn);
                 }
     
                 // Halos Gate
-                if read(function_address) == 0xE9 {
+                if read(address) == 0xE9 {
                     for idx in 1..RANGE {
                         // check neighboring syscall down
-                        if read(function_address.add(idx * DOWN)) == 0x4C
-                            && read(function_address.add(1 + idx * DOWN)) == 0x8B
-                            && read(function_address.add(2 + idx * DOWN)) == 0xD1
-                            && read(function_address.add(3 + idx * DOWN)) == 0xB8
-                            && read(function_address.add(6 + idx * DOWN)) == 0x00
-                            && read(function_address.add(7 + idx * DOWN)) == 0x00 
+                        if read(address.add(idx * DOWN)) == 0x4C
+                            && read(address.add(1 + idx * DOWN)) == 0x8B
+                            && read(address.add(2 + idx * DOWN)) == 0xD1
+                            && read(address.add(3 + idx * DOWN)) == 0xB8
+                            && read(address.add(6 + idx * DOWN)) == 0x00
+                            && read(address.add(7 + idx * DOWN)) == 0x00 
                             {
-                                let high = read(function_address.add(5 + idx * DOWN)) as u16;
-                                let low = read(function_address.add(4 + idx * DOWN)) as u16;
+                                let high = read(address.add(5 + idx * DOWN)) as u16;
+                                let low = read(address.add(4 + idx * DOWN)) as u16;
                                 let ssn = (high << 8) | (low - idx as u16);
                                 return Ok(ssn);
                             }
                         // check neighboring syscall up
-                        if read(function_address.offset(idx as isize * UP)) == 0x4c
-                            && read(function_address.offset(1 + idx as isize * UP)) == 0x8B
-                            && read(function_address.offset(2 + idx as isize * UP)) == 0xD1
-                            && read(function_address.offset(3 + idx as isize * UP)) == 0xB8
-                            && read(function_address.offset(6 + idx as isize * UP)) == 0x00
-                            && read(function_address.offset(7 + idx as isize * UP)) == 0x00 
+                        if read(address.offset(idx as isize * UP)) == 0x4c
+                            && read(address.offset(1 + idx as isize * UP)) == 0x8B
+                            && read(address.offset(2 + idx as isize * UP)) == 0xD1
+                            && read(address.offset(3 + idx as isize * UP)) == 0xB8
+                            && read(address.offset(6 + idx as isize * UP)) == 0x00
+                            && read(address.offset(7 + idx as isize * UP)) == 0x00 
                             {
-                                let high = read(function_address.offset(5 + idx as isize * UP)) as u16;
-                                let low = read(function_address.offset(4 + idx as isize * UP)) as u16;
+                                let high = read(address.offset(5 + idx as isize * UP)) as u16;
+                                let low = read(address.offset(4 + idx as isize * UP)) as u16;
                                 let ssn = (high << 8) | (low + idx as u16);
                                 return Ok(ssn);
                             }
@@ -180,31 +194,31 @@ pub fn ssn(
                 }
     
                 // Tartarus Gate
-                if read(function_address.add(3)) == 0xE9 {
+                if read(address.add(3)) == 0xE9 {
                     for idx in 1..RANGE {
                         // check neighboring syscall down
-                        if read(function_address.add(idx * DOWN)) == 0x4C
-                            && read(function_address.add(1 + idx * DOWN)) == 0x8B
-                            && read(function_address.add(2 + idx * DOWN)) == 0xD1
-                            && read(function_address.add(3 + idx * DOWN)) == 0xB8
-                            && read(function_address.add(6 + idx * DOWN)) == 0x00
-                            && read(function_address.add(7 + idx * DOWN)) == 0x00 
+                        if read(address.add(idx * DOWN)) == 0x4C
+                            && read(address.add(1 + idx * DOWN)) == 0x8B
+                            && read(address.add(2 + idx * DOWN)) == 0xD1
+                            && read(address.add(3 + idx * DOWN)) == 0xB8
+                            && read(address.add(6 + idx * DOWN)) == 0x00
+                            && read(address.add(7 + idx * DOWN)) == 0x00 
                             {
-                                let high = read(function_address.add(5 + idx * DOWN)) as u16;
-                                let low = read(function_address.add(4 + idx * DOWN)) as u16;
+                                let high = read(address.add(5 + idx * DOWN)) as u16;
+                                let low = read(address.add(4 + idx * DOWN)) as u16;
                                 let ssn = (high << 8) | (low - idx as u16);
                                 return Ok(ssn);
                             }
                         // check neighboring syscall up
-                        if read(function_address.offset(idx as isize * UP)) == 0x4c
-                            && read(function_address.offset(1 + idx as isize * UP)) == 0x8B
-                            && read(function_address.offset(2 + idx as isize * UP)) == 0xD1
-                            && read(function_address.offset(3 + idx as isize * UP)) == 0xB8
-                            && read(function_address.offset(6 + idx as isize * UP)) == 0x00
-                            && read(function_address.offset(7 + idx as isize * UP)) == 0x00 
+                        if read(address.offset(idx as isize * UP)) == 0x4c
+                            && read(address.offset(1 + idx as isize * UP)) == 0x8B
+                            && read(address.offset(2 + idx as isize * UP)) == 0xD1
+                            && read(address.offset(3 + idx as isize * UP)) == 0xB8
+                            && read(address.offset(6 + idx as isize * UP)) == 0x00
+                            && read(address.offset(7 + idx as isize * UP)) == 0x00 
                             {
-                                let high = read(function_address.offset(5 + idx as isize * UP)) as u16;
-                                let low = read(function_address.offset(4 + idx as isize * UP)) as u16;
+                                let high = read(address.offset(5 + idx as isize * UP)) as u16;
+                                let low = read(address.offset(4 + idx as isize * UP)) as u16;
                                 let ssn = (high << 8) | (low + idx as u16);
                                 return Ok(ssn);
                             }
@@ -231,9 +245,6 @@ pub fn NtCurrentPeb() -> *const PEB {
 
         #[cfg(target_arch = "x86")]
         return __readfsdword(0x30) as *const PEB;
-
-        #[cfg(target_arch = "aarch64")]
-        return *(__readx18(0x60) as *const *const PEB);
     }
 }
 
