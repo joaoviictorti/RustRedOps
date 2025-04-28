@@ -7,15 +7,13 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-wdk = "0.2.0"
-wdk-alloc = "0.2.0"
-wdk-panic = "0.2.0"
-wdk-sys = "0.2.0"
-log = "0.4.21"
-kernel-log = "0.1.3"
+wdk = "0.3.0"
+wdk-alloc = "0.3.0"
+wdk-panic = "0.3.0"
+wdk-sys = "0.3.0"
 
 [build-dependencies]
-wdk-build = "0.2.0"
+wdk-build = "0.3.0"
 
 [profile.dev]
 panic = "abort"
