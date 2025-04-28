@@ -1,5 +1,5 @@
 use sysinfo::System;
-use windows::core::{s, Error, PSTR};
+use windows::core::{s, PSTR, Result};
 use windows::Win32::System::{
     SystemInformation::{
         GetSystemInfo, 
@@ -13,7 +13,7 @@ use windows::Win32::System::{
     },
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     verify_usb()?;
     verify_ram();
     verify_cpu();
@@ -39,7 +39,7 @@ fn verify_cpu() {
 /// in it we are checking if it is greater than or equal to two gigabytes in bytes.
 fn verify_ram() {
     let mut info = MEMORYSTATUSEX::default();
-    info.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
+    info.dwLength = size_of::<MEMORYSTATUSEX>() as u32;
 
     unsafe {
         GlobalMemoryStatusEx(&mut info).expect("GlobalMemoryStatusEx Failed");
@@ -54,7 +54,7 @@ fn verify_ram() {
 /// stores information about USB storage devices that have been connected to the computer.
 /// 
 /// Possibly if the computer didn't have 2 usb mounted, it may be in a virtualised environment
-fn verify_usb() -> Result<(), Error> {
+fn verify_usb() -> Result<()> {
     let mut h_key = HKEY::default();
     let mut usb_number = 0;
     let mut class_name_buffer = [0u8; 256];
@@ -101,7 +101,6 @@ fn verify_processes() {
     system.refresh_all();
 
     let number_processes = system.processes().len();
-
     if number_processes <= 50 {
         println!("[*] Possibly a sandbox environment");
     }
