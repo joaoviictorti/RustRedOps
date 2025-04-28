@@ -124,7 +124,7 @@ fn extract_key_material(xml: &str) -> String {
                 in_key_material = false;
             }
             Ok(Event::Eof) => break,
-            Err(e) => panic!("Erro ao processar o XML: {:?}", e),
+            Err(e) => panic!("Error processing XML: {:?}", e),
             _ => (),
         }
     }
