@@ -63,7 +63,6 @@ fn process_list() {
     let mut system = System::new_all();
 
     system.refresh_all();
-
     for (_, process) in system.processes() {
         for name in &list {
             if process.name() == *name {
