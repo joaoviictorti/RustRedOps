@@ -3,9 +3,8 @@ name = "gate"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
 ntapi = "0.4.1"
-winapi = "0.3.9"
 env_logger = "0.11.3"
 log = "0.4.17"
+windows-sys = { version = "0.59.0", features = ["Win32_System_Diagnostics_Debug", "Win32_System_SystemInformation", "Win32_System_SystemServices"] }
