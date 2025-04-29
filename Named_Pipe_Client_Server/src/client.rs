@@ -1,17 +1,19 @@
 use windows::{
-    core::s,
+    core::{s, Result},
     Win32::{
         Foundation::{CloseHandle, GENERIC_READ, GENERIC_WRITE},
         Storage::FileSystem::{
-            CreateFileA, WriteFile, FILE_FLAGS_AND_ATTRIBUTES, FILE_SHARE_MODE, OPEN_EXISTING,
+            CreateFileA, WriteFile, 
+            FILE_FLAGS_AND_ATTRIBUTES, 
+            FILE_SHARE_MODE, OPEN_EXISTING,
         },
     },
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     unsafe {
         let h_file = CreateFileA(
-            s!("\\\\.\\pipe\\Teste"),
+            s!("\\\\.\\pipe\\Test"),
             GENERIC_READ.0 | GENERIC_WRITE.0,
             FILE_SHARE_MODE(0),
             None,
@@ -45,7 +47,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut number_return = 0;
         WriteFile(h_file, Some(&buffer_write), Some(&mut number_return), None)?;
-
         CloseHandle(h_file)?;
     }
 
