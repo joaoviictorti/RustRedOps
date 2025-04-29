@@ -26,7 +26,6 @@ pub fn deobfuscate_ipv6(list_ips: Vec<&str>) -> Result<Vec<u8>, Box<dyn std::err
     Ok(deobfuscated_ips)
 }
 
-
 /// Obfuscates a shellcode buffer into a list of IPv6 addresses for encoding.
 ///
 /// Each group of 16 bytes becomes a single IPv6 address.

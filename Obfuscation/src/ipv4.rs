@@ -23,7 +23,6 @@ pub fn deobfuscate_ipv4(list_ips: Vec<&str>) -> Result<Vec<u8>, Box<dyn std::err
     Ok(deobfuscated_ips)
 }
 
-
 /// Obfuscates a shellcode buffer into a list of IPv4 addresses for encoding.
 ///
 /// Each group of 4 bytes becomes an IP address.
