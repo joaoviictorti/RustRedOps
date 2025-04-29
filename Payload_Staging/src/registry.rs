@@ -2,8 +2,10 @@ use std::ffi::c_void;
 use windows::{
     core::{s, Result},
     Win32::System::Registry::{
-        RegCloseKey, RegGetValueA, RegOpenKeyExA, RegSetValueExA, HKEY, HKEY_CURRENT_USER,
-        KEY_SET_VALUE, REG_BINARY, REG_VALUE_TYPE, RRF_RT_ANY,
+        RegCloseKey, RegGetValueA, RegOpenKeyExA, 
+        RegSetValueExA, HKEY, HKEY_CURRENT_USER,
+        KEY_SET_VALUE, REG_BINARY, REG_VALUE_TYPE, 
+        RRF_RT_ANY,
     },
 };
 
@@ -41,6 +43,16 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Writes a buffer into a specified registry key.
+///
+/// # Arguments
+///
+/// * `buf` - A byte slice (`&[u8]`) containing the shellcode to write into the registry.
+///
+/// # Returns
+///
+/// * `Ok(())` on success.
+/// * `Err(Error)` if writing to the registry fails.
 fn write_registry(buf: &[u8]) -> Result<()> {
     unsafe {
         let mut hkey: HKEY = HKEY::default();
@@ -58,6 +70,16 @@ fn write_registry(buf: &[u8]) -> Result<()> {
     }
 }
 
+/// Reads a buffer from a specified registry key.
+///
+/// # Arguments
+///
+/// * `size` - The expected size of the data to read (in bytes).
+///
+/// # Returns
+///
+/// * `Ok(Vec<u8>)` containing the data read from the registry.
+/// * `Err(Error)` if reading fails.
 fn read_registry(size: usize) -> Result<Vec<u8>> {
     unsafe {
         let mut data = vec![0u8; size];

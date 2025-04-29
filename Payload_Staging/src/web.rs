@@ -5,6 +5,5 @@ fn main() -> Result<(), reqwest::Error> {
     let shellcode = client.get("http://127.0.0.1/shell.bin").send()?.bytes()?;
 
     println!("{:?}", shellcode);
-
     Ok(())
 }
