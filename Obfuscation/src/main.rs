@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let content = String::from_utf8(buffer)?;
             let lines: Vec<&str> = content
                 .lines()
-                .map(|line| line.trim_matches(|c| c == '"' || c == ',')) // Remove aspas e vírgulas
+                .map(|line| line.trim_matches(|c| c == '"' || c == ','))
                 .filter(|line| !line.is_empty() && !line.starts_with("let shellcode") && !line.starts_with(']'))
                 .collect();
 

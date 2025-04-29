@@ -259,6 +259,16 @@ const DATASET: &[&str; 256] = &[
     "penlike",
 ];
 
+/// Deobfuscates a list of words back into the original shellcode bytes.
+///
+/// # Arguments
+///
+/// * `words` - A vector of strings, where each string is a word that represents a byte (e.g., `"ironside"`, `"obediential"`).
+///
+/// # Returns
+///
+/// * `Ok(Vec<u8>)` - A vector of bytes representing the original shellcode.
+/// * `Err(Box<dyn std::error::Error>)` - If a word is not found in the predefined `DATASET`.
 pub fn deobfuscate_words(words: Vec<&str>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let mut shellcode = vec![0u8; words.len()];
 
@@ -272,6 +282,17 @@ pub fn deobfuscate_words(words: Vec<&str>) -> Result<Vec<u8>, Box<dyn std::error
     Ok(shellcode)
 }
 
+/// Obfuscates a shellcode buffer into a list of words for encoding.
+///
+/// Each byte is mapped to a unique word from a predefined dataset.
+///
+/// # Arguments
+///
+/// * `shellcode` - A mutable reference to a vector of bytes containing the shellcode.
+///
+/// # Output
+///
+/// Prints a list of corresponding words formatted for easy use.
 pub fn obfuscate_words(shellcode: &mut Vec<u8>) {
     println!("let shellcode = vec![");
     for byte in shellcode.iter() {
