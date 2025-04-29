@@ -3,9 +3,6 @@ name = "anti_debug"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-ntapi = "0.4.1"
 sysinfo = "0.30.3"
 windows = { version = "0.52.0", features = ["Win32_Foundation", "Win32_System_Diagnostics", "Win32_System_Diagnostics_Debug", "Win32_System_Threading", "Win32_System_Kernel"] }
