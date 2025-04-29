@@ -7,8 +7,7 @@ use windows::Win32::System::{
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().collect::<Vec<String>>();
-    let file = &args[1];
-    let buffer = std::fs::read(file)?;
+    let buffer = std::fs::read(&args[1])?;
     
     unsafe {
         let dos_header = buffer.as_ptr() as *mut IMAGE_DOS_HEADER;
