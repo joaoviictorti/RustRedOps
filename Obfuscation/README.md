@@ -26,7 +26,7 @@ cargo run --release -- --help
 ### Obfuscating shellcode
 
 ```sh
-cargo run --release -- -f file.bin -t ipv4 -a obfuscate`
+cargo run --release -- -f file.bin -t ipv4 -a obfuscate
 ```
 
 This will print the obfuscated shellcode to the terminal in a structured Rust vector format.
