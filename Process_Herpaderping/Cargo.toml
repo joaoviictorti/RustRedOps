@@ -4,6 +4,24 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ntapi = "0.4.1"
-widestring = "1.1.0"
-winapi = { version = "0.3.9", features = ["fileapi", "userenv", "processthreadsapi"] }
+windows-targets = "0.53.0"
+
+[dependencies.windows-sys]
+version = "0.59.0"
+features = [
+    "Wdk_Foundation", 
+    "Wdk_Storage_FileSystem", 
+    "Wdk_System_Threading", 
+    "Win32_Security", 
+    "Win32_Storage_FileSystem", 
+    "Win32_System_Diagnostics", 
+    "Win32_System_Diagnostics_Debug", 
+    "Win32_System_Environment", 
+    "Win32_System_IO", 
+    "Win32_System_Kernel", 
+    "Win32_System_Memory", 
+    "Win32_System_SystemInformation", 
+    "Win32_System_SystemServices", 
+    "Win32_System_Threading", 
+    "Win32_System_WindowsProgramming"
+]
