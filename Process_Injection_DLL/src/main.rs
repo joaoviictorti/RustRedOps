@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         if address.is_null() {
-            eprintln!("VirtualAllocEx return address is null");
+            eprintln!("VirtualAllocEx returned null");
             return Ok(())
         }
 
