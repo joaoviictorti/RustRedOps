@@ -20,13 +20,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
 
+        // Information to use in DLL injection
         let pid = args[1].parse::<u32>()?;
-
         let path = &args[2];
         let dll = path.encode_utf16().collect::<Vec<u16>>();
 
-        let proc_address = GetProcAddress(GetModuleHandleW(w!("Kernel32"))?, s!("LoadLibraryW"));
+        // Resolve the address of LoadLibraryW from kernel32.dll
+        let load_library = GetProcAddress(GetModuleHandleW(w!("Kernel32"))?, s!("LoadLibraryW"));
+
+        // Open a handle to the remote process
         let hprocess = OpenProcess(PROCESS_ALL_ACCESS, false, pid)?;
+
+        // Allocate memory in the remote process to store the DLL path
         let address = VirtualAllocEx(
             hprocess,
             None,
@@ -36,10 +41,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         if address.is_null() {
-            eprintln!("Address is null");
+            eprintln!("VirtualAllocEx return address is null");
             return Ok(())
         }
 
+        // Write the DLL path into the allocated memory in the remote process
         WriteProcessMemory(
             hprocess,
             address,
@@ -48,18 +54,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )?;
 
+        // Create a remote thread to call LoadLibraryW with the DLL path as argument
         let hthread = CreateRemoteThread(
             hprocess,
             None,
             0,
-            Some(transmute(proc_address)),
+            Some(transmute(load_library)),
             Some(address),
             0,
             None,
         )?;
 
-        CloseHandle(hprocess)?;
         CloseHandle(hthread)?;
+        CloseHandle(hprocess)?;
     }
 
     Ok(())

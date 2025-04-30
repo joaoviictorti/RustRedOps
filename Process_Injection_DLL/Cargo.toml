@@ -1,9 +1,15 @@
 [package]
-name = "dllinjection_rs"
+name = "dll_injection"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-windows = { version = "0.51.1", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_Memory", "Win32_System_Diagnostics_Debug", "Win32_Security", "Win32_System_LibraryLoader"] }
+[dependencies.windows]
+version = "0.51.1"
+features = [
+    "Win32_Foundation", 
+    "Win32_System_Threading", 
+    "Win32_System_Memory", 
+    "Win32_System_Diagnostics_Debug", 
+    "Win32_Security", 
+    "Win32_System_LibraryLoader"
+]
