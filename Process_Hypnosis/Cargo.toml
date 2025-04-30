@@ -3,6 +3,11 @@ name = "process_hypnosis"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-widestring = "1.1.0"
-windows = { version = "0.56.0", features = ["Win32_System_Threading", "Win32_System_Diagnostics_Debug", "Win32_System_Memory", "Win32_Security"] }
+[dependencies.windows]
+version = "0.56.0"
+features = [
+    "Win32_System_Threading", 
+    "Win32_System_Diagnostics_Debug", 
+    "Win32_System_Memory", 
+    "Win32_Security"
+]

