@@ -282,7 +282,7 @@ impl Ghosting {
             // Initialize Unicode structures for process parameters
             let mut u_cli = zeroed::<UNICODE_STRING>();
             let mut u_directory = zeroed::<UNICODE_STRING>();
-            let mut u_path  = zeroed::<UNICODE_STRING>();
+            let mut u_path = zeroed::<UNICODE_STRING>();
 
             RtlInitUnicodeString(&mut u_cli, cli.as_ptr());
             RtlInitUnicodeString(&mut u_directory, directory);
