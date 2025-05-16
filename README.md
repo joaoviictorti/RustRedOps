@@ -209,7 +209,7 @@ Here are some other examples of projects I've done with Rust:
 - [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
     - A runas implementation with extra features in Rust
 - [**uwd**](https://github.com/joaoviictorti/uwd)
-    - Call Stack Spoofing for Rust with support #[no_std]
+    - Call Stack Spoofing for Rust.
 
 ## Resources
 
