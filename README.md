@@ -31,6 +31,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
 * [References](#references)
     * [Other Essential Resources](#other-essential-resources)
 * [License](#license)
+* [Contributors](#contributors)
 
 ## Contents
 
@@ -309,3 +310,7 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 ## License
 
 This project is licensed under the [**MIT License**](/LICENSE)
+
+## Contributors
+
+[![contributors](https://contrib.rocks/image?repo=joaoviictorti/RustRedOps) ](https://github.com/joaoviictorti/RustRedOps/graphs/contributors)
