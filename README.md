@@ -309,7 +309,7 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 
 ## License
 
-This project is licensed under the [**MIT License**](/LICENSE)
+This project is licensed under the [**MIT License**](/LICENSE). See the LICENSE file for details.
 
 ## Contributors
 
