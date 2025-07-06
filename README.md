@@ -211,6 +211,8 @@ Here are some other examples of projects I've done with Rust:
     - A runas implementation with extra features in Rust.
 - [**uwd**](https://github.com/joaoviictorti/uwd)
     - Call Stack Spoofing for Rust.
+- [**hypnus**](https://github.com/joaoviictorti/hypnus)
+    - Memory Obfuscation in Rust.
 
 ## Resources
 
