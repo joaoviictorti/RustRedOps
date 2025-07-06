@@ -9,7 +9,7 @@
 </br>
 
 <p align="center">
-    <img height="200" alt="RustRedOps" src="rust.png">
+    <img height="200" width=350 alt="RustRedOps" src="rust.png">
 </p>
 
 </br>
