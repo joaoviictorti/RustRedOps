@@ -483,14 +483,17 @@ pub fn NtCurrentPeb() -> *const PEB {
 /// * The value read from the GS segment.
 #[inline(always)]
 #[cfg(target_arch = "x86_64")]
-pub unsafe fn __readgsqword(offset: u64) -> u64 {
+pub fn __readgsqword(offset: u64) -> u64 {
     let out: u64;
-    core::arch::asm!(
-        "mov {}, gs:[{:e}]",
-        lateout(reg) out,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
+    unsafe {
+        core::arch::asm!(
+            "mov {}, gs:[{:e}]",
+            lateout(reg) out,
+            in(reg) offset,
+            options(nostack, pure, readonly),
+        );
+    }
+
     out
 }
 
@@ -505,14 +508,17 @@ pub unsafe fn __readgsqword(offset: u64) -> u64 {
 /// * The value read from the FS segment.
 #[inline(always)]
 #[cfg(target_arch = "x86")]
-pub unsafe fn __readfsdword(offset: u32) -> u32 {
+pub fn __readfsdword(offset: u32) -> u32 {
     let out: u32;
-    core::arch::asm!(
-        "mov {:e}, fs:[{:e}]",
-        lateout(reg) out,
-        in(reg) offset,
-        options(nostack, pure, readonly),
-    );
+    unsafe {
+        core::arch::asm!(
+            "mov {:e}, fs:[{:e}]",
+            lateout(reg) out,
+            in(reg) offset,
+            options(nostack, pure, readonly),
+        );
+    }
+
     out
 }
 
