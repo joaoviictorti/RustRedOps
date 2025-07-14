@@ -3,7 +3,12 @@
 
 mod export;
 
-use core::{arch::asm, ffi::c_void, mem::transmute, ptr::null_mut};
+use core::{
+    arch::asm, 
+    ffi::c_void,
+    mem::transmute, 
+    ptr::null_mut
+};
 
 extern "system" {
     fn VirtualAlloc(
@@ -70,7 +75,6 @@ fn main() -> u8 {
         );
 
         let func: fn() = transmute(address);
-
         func()
     }
 
