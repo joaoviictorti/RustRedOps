@@ -169,7 +169,7 @@ The repository is organized into several projects, each with its own purpose and
 44. [**Process Herpaderping**](/Process_Herpaderping)
     - Obscuring the intentions of a process by modifying the contents of the disk after the image has been mapped.
 
-45. [**Remove CRT**](/Remove_CRT)
+45. [**CRT**](/CRT)
     - It focuses on minimizing the use of the CRT (C Runtime Library) during runtime and applying additional flags to strip away unnecessary information from the binary.
 
 46. [**Self Deletion**](/Self_Deletion)
