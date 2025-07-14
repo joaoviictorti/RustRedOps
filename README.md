@@ -148,49 +148,46 @@ The repository is organized into several projects, each with its own purpose and
 37. [**Process Argument Spoofing**](/Process_Argument_Spoofing)
     - Exploits the technique of masking or altering the arguments of a process to hide malicious activity.
    
-38. [**Process Injection (DLL)**](/Process_Injection_DLL)
-    - It focuses on injecting dynamic link libraries (DLL) into running processes to execute malicious code.
+38. [**Process Injection**](/Process_Injection)
+    - Injects a DLL or shellcode into a remote process and executes.
 
-39. [**Process Injection (Shellcode)**](/Process_Injection_Shellcode)
-    - It exploits shellcode injection directly into running processes to control or execute malicious tasks.
-
-40. [**Payload Placement**](/Payload_Placement)
+39. [**Payload Placement**](/Payload_Placement)
     - Storing a shellcode in the .text section and then executing it.
 
-41. [**Process Hypnosis**](/Process_Hypnosis)
+40. [**Process Hypnosis**](/Process_Hypnosis)
     - This technique focuses on controlling the execution flow of a program that is being debugged and obtaining relevant information from it, such as the creation of new threads, loaded modules, exceptions and much more. Or even execute a shellcode.
 
-42. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
+41. [**Payload Execution Fibers**](/Payload_Execution_Fibers)
     - Running shellcode using Fibers.
 
-43. [**Payload Staging**](/Payload_Staging)
+42. [**Payload Staging**](/Payload_Staging)
     - This project focuses on demonstrating how to perform shellcode retrieval using an HTTP request and a Registry key
 
-44. [**Process Ghosting**](/Process_Ghosting)
+43. [**Process Ghosting**](/Process_Ghosting)
     - Loading a PE file using the Process Ghosting technique.
 
-45. [**Process Herpaderping**](/Process_Herpaderping)
+44. [**Process Herpaderping**](/Process_Herpaderping)
     - Obscuring the intentions of a process by modifying the contents of the disk after the image has been mapped.
 
-46. [**Remove CRT**](/Remove_CRT)
+45. [**Remove CRT**](/Remove_CRT)
     - It focuses on minimizing the use of the CRT (C Runtime Library) during runtime and applying additional flags to strip away unnecessary information from the binary.
 
-47. [**Self Deletion**](/Self_Deletion)
+46. [**Self Deletion**](/Self_Deletion)
     - Technique for deleting the running binary.
 
-48. [**String Hashing**](/String_Hashing)
+47. [**String Hashing**](/String_Hashing)
     - Creating string hashes to perform hiding.
 
-49. [**Syscalls**](/Syscalls)
+48. [**Syscalls**](/Syscalls)
     - Running direct and indirect syscall.
 
-50. [**Threadless Injection**](/Threadless_Injection)
+40. [**Threadless Injection**](/Threadless_Injection)
     - Performing Threadless Injection using Rust.
 
-51. [**WMI**](/WMI)
+50. [**WMI**](/WMI)
     - Running WMI (Windows Management Instrumentation) queries.
 
-52. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
+51. [**WebAssembly Shellcode**](/WebAssembly_Shellcode)
     - Running shellcode through WebAssembly.
 
 ## Other Rust projects
