@@ -5,4 +5,14 @@ edition = "2021"
 
 [dependencies]
 sysinfo = "0.29.11"
-windows = { version = "0.52.0", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_Threading"] }
+
+[dependencies.windows]
+version = "0.52.0"
+features = [
+    "Win32_System_Memory", 
+    "Win32_Foundation", 
+    "Win32_System_Diagnostics_ToolHelp", 
+    "Win32_System_Diagnostics_Debug", 
+    "Win32_System_Kernel", 
+    "Win32_System_Threading"
+]
