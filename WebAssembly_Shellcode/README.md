@@ -1,19 +1,10 @@
 # WebAssembly Shellcode 🦀
 
-<p align="left">
-	<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/made%20with-Rust-red"></a>
-	<a href="#"><img src="https://img.shields.io/badge/platform-windows-blueviolet"></a>
-</p>
-
-- [Overview](#overview)
-- [Usage](#usage)
-- [References](#references)
-
-# Overview
+## Overview
 
 This project focuses on demonstrating how we can execute shellcode using WebAssembly. It is often used for shellcode evasion.
 
-# Usage 
+## Usage 
 
 First, access the "shellcode assembly" directory and, if you wish, replace your shellcode with a specific one, in my case, it is configured to run notepad.exe. Then run the command:
 
@@ -39,5 +30,6 @@ target/release/execute_shellcode.exe
 
 Remember that we can embed the shellcode inside the binary, but to make it more didactic we prefer to leave the "shell.wat" file separate from the binary.
 
-# References
+## References
+
 https://balwurk.com/shellcode-evasion-using-webassembly-and-rust/
