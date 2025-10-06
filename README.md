@@ -200,8 +200,6 @@ Here are some other examples of projects I've done with Rust:
     - COFF Loader.
 - [**rustclr**](https://github.com/joaoviictorti/rustclr)
     - Host CLR and run .NET binaries.
-- [**userdmp**](https://github.com/joaoviictorti/userdmp)
-    - A Rust crate to parse user-mode minidump files generated on Windows.
 - [**dinvk**](https://github.com/joaoviictorti/dinvk)
     - Dynamically invoke arbitrary code and use various tricks written idiomatically in Rust (Dinvoke).
 - [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
