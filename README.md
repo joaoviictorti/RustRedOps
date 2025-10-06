@@ -19,7 +19,7 @@ RustRedOps is a repository that houses various tools and projects related to Red
 ## Table of Contents
 
 * [Contents](#contents)
-* [Other Rust projects](#other-rust-projects)
+  * [Other Rust Offensive Projects](#other-rust-offensive-projects)
 * [Resources](#resources)
 * [Requirements](#requirements)
 * [Compile](#compile)
@@ -190,7 +190,7 @@ The repository is organized into several projects, each with its own purpose and
 51. [**WebAssembly Shellcode**](/WebAssembly-Shellcode)
     - Running shellcode through WebAssembly.
 
-## Other Rust projects
+### Other Rust Offensive Projects
 
 Here are some other examples of projects I've done with Rust:
 
