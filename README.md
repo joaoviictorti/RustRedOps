@@ -201,13 +201,13 @@ Here are some other examples of projects I've done with Rust:
 - [**rustclr**](https://github.com/joaoviictorti/rustclr)
     - Host CLR and run .NET binaries.
 - [**dinvk**](https://github.com/joaoviictorti/dinvk)
-    - Dynamically invoke arbitrary code and use various tricks written idiomatically in Rust (Dinvoke).
+    - Dynamically invoke arbitrary code (Dinvoke).
 - [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
-    - A runas implementation with extra features in Rust.
+    - A runas implementation with extra features.
 - [**uwd**](https://github.com/joaoviictorti/uwd)
-    - Call Stack Spoofing for Rust.
+    - Call Stack Spoofing.
 - [**hypnus**](https://github.com/joaoviictorti/hypnus)
-    - Memory Obfuscation in Rust.
+    - Memory Obfuscation.
 
 ## Resources
 
