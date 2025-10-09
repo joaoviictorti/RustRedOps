@@ -324,10 +324,22 @@ impl PE {
                     let target_address = address.add(((*base_relocation).VirtualAddress + entry_offset) as usize);
 
                     match entry_type as u32 {
-                        IMAGE_REL_BASED_DIR64 => *(target_address as *mut isize) += offset as isize,
-                        IMAGE_REL_BASED_HIGHLOW => *(target_address as *mut u32) = (*(target_address as *mut u32)).wrapping_add(offset as u32),
-                        IMAGE_REL_BASED_HIGH => *(target_address as *mut u16) = (*(target_address as *mut u16) as u32).wrapping_add((offset as u32 >> 16) & 0xFFFF) as u16,
-                        IMAGE_REL_BASED_LOW => *(target_address as *mut u16) = (*(target_address as *mut u16) as u32).wrapping_add(offset as u32 & 0xFFFF) as u16,
+                        IMAGE_REL_BASED_DIR64 => {
+                            let value = (target_address as *mut isize).read_unaligned();
+                            (target_address as *mut isize).write_unaligned(value + offset as isize);
+                        },
+                        IMAGE_REL_BASED_HIGHLOW => {
+                            let value = (target_address as *mut u32).read_unaligned();
+                            (target_address as *mut u32).write_unaligned(value.wrapping_add(offset as u32));
+                        },
+                        IMAGE_REL_BASED_HIGH => {
+                            let value = (target_address as *mut u16).read_unaligned() as u32;
+                            (target_address as *mut u16).write_unaligned(value.wrapping_add((offset as u32 >> 16) & 0xFFFF) as u16);
+                        },
+                        IMAGE_REL_BASED_LOW => {
+                            let value = (target_address as *mut u16).read_unaligned() as u32;
+                            (target_address as *mut u16).write_unaligned(value.wrapping_add(offset as u32 & 0xFFFF) as u16);
+                        },
                         IMAGE_REL_BASED_ABSOLUTE => {},
                         _ => return Err(Error::new(E_FAIL, format!("Unknown relocation type: {}", entry_type)))
                     }
