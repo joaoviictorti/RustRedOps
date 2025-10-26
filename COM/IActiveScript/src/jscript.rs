@@ -1,0 +1,78 @@
+use crate::data::ScriptSite;
+use std::ptr::null_mut;
+use windows::{
+    core::{w, Interface, Result, PCWSTR},
+    Win32::System::{Com::*, Diagnostics::Debug::ActiveScript::*},
+};
+
+/// A wrapper for the Microsoft JScript scripting engine using COM interfaces.
+pub struct JScript {
+    /// Handle to the scripting engine (`IActiveScript`).
+    engine: IActiveScript,
+
+    /// Interface for parsing and evaluating JScript code (`IActiveScriptParse64`).
+    parse: IActiveScriptParse64,
+}
+
+impl JScript {
+    /// Creates and initializes a new [`JScript`] engine instance.
+    pub fn new() -> Result<Self> {
+        unsafe {
+            // Initializes the COM environment
+            CoInitializeEx(None, COINIT_MULTITHREADED).ok()?;
+
+            // Configures JScript as the language
+            let guid = CLSIDFromProgID(w!("JScript"))?;
+            let engine: IActiveScript = CoCreateInstance(&guid, None, CLSCTX_ALL)?;
+
+            // Sets up the ScriptSite
+            let site: IActiveScriptSite = ScriptSite.into();
+            engine.SetScriptSite(&site)?;
+
+            // Gets the parsing interface
+            let parse = engine.cast::<IActiveScriptParse64>()?;
+            parse.InitNew()?;
+
+            Ok(Self { engine, parse })
+        }
+    }
+
+    /// Executes a JScript snippet provided as a UTF-8 Rust string.
+    ///
+    /// # Arguments
+    ///
+    /// * `script` - A string slice containing the JScript code to run
+    pub fn run(&self, script: &str) -> Result<()> {
+        unsafe {
+            // Activates the script state
+            self.engine.SetScriptState(SCRIPTSTATE_CONNECTED)?;
+
+            // Converts the script code to PCWSTR
+            let wide = script.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+            let code = PCWSTR::from_raw(wide.as_ptr());
+
+            // Executes the script
+            self.parse.ParseScriptText(
+                code,
+                None,
+                None,
+                None,
+                0,
+                0,
+                SCRIPTTEXT_ISVISIBLE,
+                null_mut(),
+                null_mut(),
+            )?;
+
+            Ok(())
+        }
+    }
+}
+
+impl Drop for JScript {
+    fn drop(&mut self) {
+        unsafe {
+            self.engine.Close().ok();
+        }
+    }
+}
