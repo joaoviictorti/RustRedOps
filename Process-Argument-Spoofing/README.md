@@ -7,10 +7,3 @@ The "Process Argument Spoofing" technique involves modifying or masking the argu
 Showing changes to arguments in Procmon and Process Hacker.
 
 ![poc](img/poc.png)
-
-## Usage 
-
-You can run with cargo run or the compiled binary directly:
-```sh
-cargo run --release
-```

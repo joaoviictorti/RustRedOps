@@ -7,10 +7,3 @@ We chose not to use the CRT for several reasons:
 * Binary Size: By removing the CRT, we significantly reduce the size of the final binary, making it easier to distribute and reducing the memory footprint.
 * Detection Evasion: CRT-free applications are less likely to be detected by security solutions, making them ideal for situations that require high discretion.
 * Total Control: By avoiding CRT, we gain total control over all functions and routines, allowing for specific optimisations and better resource management.
-
-## Usage 
-
-You can run with cargo run or the compiled binary directly:
-```sh
-cargo run --release
-```

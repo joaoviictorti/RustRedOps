@@ -13,6 +13,7 @@ You can pass arguments to your file, in this example I'm using mimikatz.exe
 ```sh
 cargo run --release -- --pe mimikatz.exe --arg "coffee exit"
 ```
+
 Using DLL:
 ```sh
 cargo run --release -- --pe .\main.dll --export "test"
