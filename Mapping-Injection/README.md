@@ -1,4 +1,4 @@
-# Mapping Injection🦀
+# Mapping Injection
 
 This repo contains two versions of Mapping Injection:
 
