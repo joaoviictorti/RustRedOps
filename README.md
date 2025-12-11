@@ -2,9 +2,9 @@
 
 ![Rust](https://img.shields.io/badge/made%20with-Rust-red)
 ![Platform](https://img.shields.io/badge/platform-windows-blueviolet)
+![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-brightgreen)
 ![Forks](https://img.shields.io/github/forks/joaoviictorti/RustRedOps)
 ![Stars](https://img.shields.io/github/stars/joaoviictorti/RustRedOps)
-![License](https://img.shields.io/github/license/joaoviictorti/RustRedOps)
 
 </br>
 
@@ -293,16 +293,6 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 * [trickster0](https://github.com/trickster0)
 * [BlWasp](https://github.com/BlWasp)
 * [CCob](https://github.com/CCob)
-
-### Other Essential Resources:
-
-* https://balwurk.com/shellcode-evasion-using-webassembly-and-rust
-* https://github.com/janoglezcampos/rust_syscalls
-* https://github.com/microsoft
-* https://ired.team
-* https://github.com/rust-osdev/uefi-rs
-* https://discord.gg/rust-lang-community
-* https://github.com/anvie/litcrypt.rs
 
 ## License
 
