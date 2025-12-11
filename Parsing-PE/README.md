@@ -1,4 +1,4 @@
-# Parsing PE 🦀
+# Parsing PE
 
 ## Overview
 

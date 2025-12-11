@@ -1,4 +1,4 @@
-# COM 🦀
+# COM (Component Object Model)
 
 This folder is related to techniques using COM Interfaces
 

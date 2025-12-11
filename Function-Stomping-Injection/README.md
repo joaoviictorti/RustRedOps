@@ -1,4 +1,4 @@
-# Function Stomping Injection 🦀
+# Function Stomping Injection
 
 This repository contains two versions of Function Stomping:
 

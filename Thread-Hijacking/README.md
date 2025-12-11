@@ -1,4 +1,4 @@
-# Thread Hijacking 🦀
+# Thread Hijacking
 
 This repo contains two versions of Thread Hijacking:
 

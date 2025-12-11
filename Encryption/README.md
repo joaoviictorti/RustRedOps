@@ -1,4 +1,4 @@
-# Encryption Shellcode 🦀
+# Encryption Shellcode
 
 Technique that performs shellcode decryption using the RC4 and AES algorithm
 

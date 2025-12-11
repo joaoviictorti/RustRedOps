@@ -1,4 +1,4 @@
-# Encrypting strings at compile time 🦀
+# Encrypting strings at compile time
 
 This project focuses on demonstrating how you can encrypt strings at compile time and decrypt them at runtime.
 

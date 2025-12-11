@@ -1,4 +1,4 @@
-# WebAssembly Shellcode 🦀
+# WebAssembly Shellcode
 
 ## Overview
 

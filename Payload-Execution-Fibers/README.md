@@ -1,3 +1,3 @@
-# Payload Execution FIber 🦀
+# Payload Execution FIber
 
 Running shellcode using Fibers.

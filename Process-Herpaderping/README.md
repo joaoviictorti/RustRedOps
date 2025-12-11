@@ -1,4 +1,4 @@
-# Process Herpaderping 🦀
+# Process Herpaderping
 
 Process Herpaderping is a technique that aims to hide the true intentions of a process by altering the disk contents after the process image has already been loaded into memory. This procedure causes an unusual reaction in both security systems and the operating system itself.
 

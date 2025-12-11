@@ -1,4 +1,4 @@
-# Module Overloading 🦀
+# Module Overloading
 
 Module overloading is a method of swapping the contents of a DLL mapped to our process using the NtCreateSection and NtMapViewOfSection APIs, then replacing its contents with an EXE/DLL file and subsequently executing its entry point.
 

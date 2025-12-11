@@ -1,4 +1,4 @@
-# Local PE Injection 🦀
+# Local PE Injection
 
 Local PE Injection is a method to execute a PE file in memory.
 

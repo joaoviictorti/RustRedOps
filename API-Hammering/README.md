@@ -1,4 +1,4 @@
-# API Hammering 🦀
+# API Hammering
 
 API Hammering consists of a large number of useless Windows API function calls, functions, loops, writing files and so on. 
 
