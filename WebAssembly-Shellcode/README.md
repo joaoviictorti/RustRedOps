@@ -1,8 +1,6 @@
 # WebAssembly Shellcode
 
-## Overview
-
-This project focuses on demonstrating how we can execute shellcode using WebAssembly. It is often used for shellcode evasion.
+> This project focuses on demonstrating how we can execute shellcode using WebAssembly. It is often used for shellcode evasion.
 
 ## Usage 
 

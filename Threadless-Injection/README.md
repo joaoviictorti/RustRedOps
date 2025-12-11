@@ -1,6 +1,6 @@
 # Threadless Injection
 
-The Threadless Injection technique is very similar to Function Stomping Injection, the difference being that Threadless searches for a memory hole to install the shellcode, removes the trampolin installed in the target function and returns the original bytes. 
+> The Threadless Injection technique is very similar to Function Stomping Injection, the difference being that Threadless searches for a memory hole to install the shellcode, removes the trampolin installed in the target function and returns the original bytes. 
 
 ## Usage 
 
@@ -14,6 +14,6 @@ If you want a direct execution to observe the functionality more quickly, inject
 cargo run --release -- powershell.exe
 ```
 
-# References
+## References
 
 * https://github.com/CCob/ThreadlessInject

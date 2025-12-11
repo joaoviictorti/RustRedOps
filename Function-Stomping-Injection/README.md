@@ -1,6 +1,6 @@
 # Function Stomping Injection
 
-This repository contains two versions of Function Stomping:
+> Function Stomping is a code injection technique that overwrites the beginning of a target function with custom shellcode, effectively "stomping" its original code.
 
 - **Local**: overwrites a function in the current process.
 - **Remote**: overwrites a function in a remote process (targeting a specific PID).

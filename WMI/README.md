@@ -1,3 +1,3 @@
 # WMI
 
-Simple WMI query demo using Rust
+> Simple WMI query demo using Rust

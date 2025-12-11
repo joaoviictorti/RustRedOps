@@ -1,6 +1,6 @@
 # Process Ghosting
 
-Process Ghosting is a technique that uses a temporary file with pending deletion to create a process from that content.
+> Process Ghosting is a technique that uses a temporary file with pending deletion to create a process from that content.
 
 ## Usage 
 

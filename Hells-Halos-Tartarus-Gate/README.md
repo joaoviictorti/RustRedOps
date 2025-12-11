@@ -1,6 +1,6 @@
 # Hells / Halos / Tartarus Gate
 
-The Hells / Halos / Tartarus Gate techniques are advanced methods for dynamically searching for the SSN syscall number.
+> The Hells / Halos / Tartarus Gate techniques are advanced methods for dynamically searching for the SSN syscall number.
 
 ## Usage
 

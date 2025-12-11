@@ -1,6 +1,6 @@
 # COM (Component Object Model)
 
-This folder is related to techniques using COM Interfaces
+> This folder is related to techniques using COM Interfaces
 
 * **IActiveScript**: Executes VBScript or JScript code inside the current process through the Windows Script engine.
 * **IBackgroundCopyManager**: Transfers files through the Background Intelligent Transfer Service (BITS).

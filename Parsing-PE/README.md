@@ -1,8 +1,6 @@
 # Parsing PE
 
-## Overview
-
-The code is focused on parsing the PE header of any Windows executable file.
+> The code is focused on parsing the PE header of any Windows executable file.
 
 ## Usage 
 
