@@ -296,7 +296,17 @@ I would like to express my sincere gratitude to the creators of remarkable proje
 
 ## License
 
-This project is licensed under the [**MIT License**](/LICENSE)
+RustRedOps is licensed under either of
+
+- Apache License, Version 2.0, ([LICENSE-APACHE](https://github.com/joaoviictorti/RustRedOps/tree/main/LICENSE-APACHE) or
+  <https://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](https://github.com/joaoviictorti/RustRedOps/tree/main/LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in RustRedOps
+by you, as defined in the Apache-2.0 license, shall be dually licensed as above, without any
+additional terms or conditions.
 
 ## Contributors
 
