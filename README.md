@@ -16,23 +16,6 @@
 
 RustRedOps is a repository that houses various tools and projects related to Red Team operations, developed in Rust. This repository is dedicated to providing effective and efficient tools for security professionals and penetration testers who want to perform security assessments and intrusion tests.
 
-## Table of Contents
-
-* [Contents](#contents)
-  * [Other Rust Offensive Projects](#other-rust-offensive-projects)
-* [Resources](#resources)
-* [Requirements](#requirements)
-* [Compile](#compile)
-    * [Compiling the Project](#compiling-the-project)
-    * [Adding Destination Architectures](#adding-destination-architectures)
-    * [Compiling for a Specific Architecture](#compiling-for-a-specific-architecture)
-* [How to get started](#how-to-get-started)
-* [Contributing to RustRedOps](#contributing-to-rustRedOps)
-* [References](#references)
-    * [Other Essential Resources](#other-essential-resources)
-* [License](#license)
-* [Contributors](#contributors)
-
 ## Contents
 
 The repository is organized into several projects, each with its own purpose and functionality. Here are some examples of the projects included:
@@ -202,7 +185,7 @@ Here are some other examples of projects I've done with Rust:
     - Host CLR and run .NET binaries.
 - [**dinvk**](https://github.com/joaoviictorti/dinvk)
     - Dynamically invoke arbitrary code (Dinvoke).
-- [**runas-rs**](https://github.com/joaoviictorti/runas-rs)
+- [**runas**](https://github.com/joaoviictorti/runas)
     - A runas implementation with extra features.
 - [**uwd**](https://github.com/joaoviictorti/uwd)
     - Call Stack Spoofing.
@@ -219,40 +202,6 @@ Here are some other examples of projects I've done with Rust:
 - [Rust](https://www.rust-lang.org/): Rust is a modern and secure programming language used to develop the tools in this repository.
 - [Cargo](https://doc.rust-lang.org/cargo/): Cargo is Rust's package manager and compiler, essential for compiling and running projects.
 
-## Compile
-
-### Compiling the Project
-
-To start the compilation, use the following command:
-
-```sh
-cargo build --release
-```
-
-### Adding Destination Architectures
-
-If you are using a different operating system or need to compile for a specific architecture, you can list all available target architectures with the following command:
-
-```sh
-rustup target list
-```
-
-Once you have identified the desired target architecture, add it using rustup:
-
-```sh
-rustup target add <arch>
-```
-
-Replace `<arch>` with the desired architecture, such as `x86_64-pc-windows-gnu`.
-
-### Compiling for a Specific Architecture
-
-Then compile the project for the specific architecture:
-
-```sh
-cargo build --release --target <arch>
-```
-
 ## How to get started
 
 Follow these steps to start using the projects in this repository:
@@ -266,7 +215,6 @@ Follow these steps to start using the projects in this repository:
    cd RustRedOps/<name-project>
    ```
 3. Follow the project-specific installation and usage instructions as described in the README inside this directory.
-
 
 ## Contributing to RustRedOps
 
